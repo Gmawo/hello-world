@@ -1,0 +1,36 @@
+{
+  "name": "smart-match",
+  "private": true,
+  "scripts": {
+    "build": "remix vite:build",
+    "dev": "shopify app dev",
+    "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
+    "setup": "prisma generate",
+    "start": "remix-serve ./build/server/index.js",
+    "typecheck": "tsc"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18.20.0"
+  },
+  "dependencies": {
+    "@remix-run/node": "^2.10.0",
+    "@remix-run/react": "^2.10.0",
+    "@remix-run/serve": "^2.10.0",
+    "@shopify/app-bridge-react": "^4.1.6",
+    "@shopify/polaris": "^12.0.0",
+    "@shopify/shopify-app-remix": "^3.3.0",
+    "@shopify/shopify-app-session-storage-memory": "^4.0.4",
+    "isbot": "^4.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@remix-run/dev": "^2.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.0",
+    "vite-tsconfig-paths": "^4.3.1"
+  }
+}

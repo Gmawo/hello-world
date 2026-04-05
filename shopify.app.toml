@@ -1,0 +1,22 @@
+name = "smart-match"
+client_id = "your-client-id-here"
+application_url = "https://your-app-url.com"
+embedded = true
+
+[access_scopes]
+scopes = "read_products,write_products,read_metaobjects,write_metaobjects,read_metaobject_definitions,write_metaobject_definitions,read_metafields,write_metafields"
+
+[auth]
+redirect_urls = [
+  "https://your-app-url.com/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-10"
+
+  [[webhooks.subscriptions]]
+  topics = ["app/uninstalled"]
+  uri = "/webhooks"
+
+[pos]
+embedded = false

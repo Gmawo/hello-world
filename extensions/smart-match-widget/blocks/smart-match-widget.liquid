@@ -1,0 +1,164 @@
+{% comment %}
+  Smart Match Widget — Device Compatibility Filter
+  Renders a green "SMART MATCH" banner on collection pages.
+  Customers select their smartwatch to filter products to compatible items only.
+{% endcomment %}
+
+{{ 'smart-match.css' | asset_url | stylesheet_tag }}
+
+<div
+  id="smart-match-root"
+  data-shop="{{ shop.permanent_domain }}"
+  data-collection="{{ collection.handle }}"
+  data-storefront-token="{{ block.settings.storefront_token }}"
+  data-app-url="{{ block.settings.app_url }}"
+  data-straps-collection="{{ block.settings.straps_collection }}"
+  data-protection-collection="{{ block.settings.protection_collection }}"
+  data-accessories-collection="{{ block.settings.accessories_collection }}"
+  data-product-selector="{{ block.settings.product_card_selector | default: '[data-product-handle], .product-item, .grid-product, .product-card' }}"
+  data-locale="{{ request.locale.iso_code }}"
+>
+  {%- comment -%} Widget is rendered by JS; this is the loading state {%- endcomment -%}
+  <div class="sm-banner sm-banner--loading" aria-hidden="true">
+    <div class="sm-banner__inner">
+      <div class="sm-banner__header">
+        <span class="sm-banner__title">SMART MATCH</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="smart-match-modal" class="sm-modal" role="dialog" aria-modal="true" aria-label="{{ block.settings.modal_title | default: 'Select your device' }}" hidden>
+  <div class="sm-modal__backdrop"></div>
+  <div class="sm-modal__sheet">
+    <div class="sm-modal__header">
+      <h2 class="sm-modal__title">{{ block.settings.modal_title | default: 'Select your device' }}</h2>
+      <button class="sm-modal__close" aria-label="Close" type="button">&#10005;</button>
+    </div>
+    <div class="sm-modal__body">
+      <div class="sm-selects">
+        <div class="sm-select-wrap sm-select-wrap--active" id="sm-brand-wrap">
+          <select id="sm-brand-select" class="sm-select" aria-label="Select brand">
+            <option value="">{{ block.settings.all_brands_label | default: 'All Brands' }}</option>
+          </select>
+          <span class="sm-select__arrow">&#8964;</span>
+        </div>
+        <div class="sm-select-wrap" id="sm-model-wrap">
+          <select id="sm-model-select" class="sm-select" aria-label="Select model" disabled>
+            <option value="">{{ block.settings.all_models_label | default: 'All Models' }}</option>
+          </select>
+          <span class="sm-select__arrow">&#8964;</span>
+        </div>
+      </div>
+      <div class="sm-search-wrap">
+        <span class="sm-search__icon">&#128269;</span>
+        <input
+          id="sm-search-input"
+          class="sm-search"
+          type="search"
+          placeholder="{{ block.settings.search_placeholder | default: 'Search for model...' }}"
+          aria-label="Search for model"
+          autocomplete="off"
+        />
+      </div>
+      <div class="sm-device-grid" id="sm-device-grid" aria-live="polite">
+        <div class="sm-loading-spinner" id="sm-loading">
+          <div class="sm-spinner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ 'smart-match.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Smart Match Widget",
+  "target": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "API Configuration"
+    },
+    {
+      "type": "text",
+      "id": "storefront_token",
+      "label": "Storefront API Access Token",
+      "info": "Find this in your Shopify admin under Apps > Smart Match > API access"
+    },
+    {
+      "type": "text",
+      "id": "app_url",
+      "label": "App URL",
+      "info": "The URL where your Smart Match app is deployed (e.g. https://your-app.com)"
+    },
+    {
+      "type": "header",
+      "content": "Category Collections"
+    },
+    {
+      "type": "text",
+      "id": "straps_collection",
+      "label": "Straps collection handle",
+      "placeholder": "straps"
+    },
+    {
+      "type": "text",
+      "id": "protection_collection",
+      "label": "Protection collection handle",
+      "placeholder": "protection"
+    },
+    {
+      "type": "text",
+      "id": "accessories_collection",
+      "label": "Accessories collection handle",
+      "placeholder": "accessories"
+    },
+    {
+      "type": "header",
+      "content": "Widget Text"
+    },
+    {
+      "type": "text",
+      "id": "modal_title",
+      "label": "Modal title",
+      "default": "Select your device"
+    },
+    {
+      "type": "text",
+      "id": "all_brands_label",
+      "label": "All brands label",
+      "default": "All Brands"
+    },
+    {
+      "type": "text",
+      "id": "all_models_label",
+      "label": "All models label",
+      "default": "All Models"
+    },
+    {
+      "type": "text",
+      "id": "search_placeholder",
+      "label": "Search placeholder",
+      "default": "Search for model..."
+    },
+    {
+      "type": "header",
+      "content": "Advanced"
+    },
+    {
+      "type": "text",
+      "id": "product_card_selector",
+      "label": "Product card CSS selector",
+      "default": "[data-product-handle], .product-item, .grid-product, .product-card",
+      "info": "CSS selector for product cards in your theme. Used for filtering."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Smart Match Widget"
+    }
+  ]
+}
+{% endschema %}

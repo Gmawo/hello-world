@@ -1,0 +1,4 @@
+[extensions.smart-match-widget]
+type = "theme"
+name = "Smart Match Widget"
+handle = "smart-match-widget"
