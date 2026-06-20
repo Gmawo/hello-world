@@ -7,6 +7,7 @@ const RANK_LABEL = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
 
 function rankLabel(r) { return RANK_LABEL[r] || String(r); }
 function isRed(suit) { return RED_SUITS.has(suit); }
+function other(owner) { return owner === 1 ? 2 : 1; }
 
 function buildDeck(owner) {
   const cards = [];
@@ -28,18 +29,18 @@ function shuffle(arr) {
 
 function makePlayerState(owner) {
   const deck = shuffle(buildDeck(owner));
-  const stock = deck.splice(0, 13);
-  stock[stock.length - 1].faceUp = true; // top of stock visible
+  const reserve = deck.splice(0, 13); // 12 hidden + 1 revealed on top
+  reserve[reserve.length - 1].faceUp = true;
 
-  const tableau = [[], [], [], []];
+  const tableau = [[], [], [], []]; // this player's 4 houses (shared use)
   for (let col = 0; col < 4; col++) {
     const card = deck.shift();
     card.faceUp = true;
     tableau[col].push(card);
   }
 
-  const hand = deck; // remaining cards, face down
-  return { owner, stock, tableau, hand, waste: [] };
+  const hand = deck; // remaining 35 cards, face down
+  return { owner, reserve, tableau, hand, waste: [], drawn: [] };
 }
 
 function newGame() {
@@ -47,7 +48,7 @@ function newGame() {
     players: { 1: makePlayerState(1), 2: makePlayerState(2) },
     foundations: { S: [], H: [], C: [], D: [] },
     current: 1,
-    selected: null, // { owner, type: 'stock'|'waste'|'tcol', col }
+    selected: null, // { owner, type: 'reserve'|'drawn'|'tcol', col }
     winner: null,
   };
 }
@@ -58,7 +59,8 @@ function topOf(pile) { return pile.length ? pile[pile.length - 1] : null; }
 
 function pileRef(owner, type, col) {
   const p = state.players[owner];
-  if (type === 'stock') return p.stock;
+  if (type === 'reserve') return p.reserve;
+  if (type === 'drawn') return p.drawn;
   if (type === 'waste') return p.waste;
   if (type === 'tcol') return p.tableau[col];
   return null;
@@ -71,10 +73,6 @@ function canPlayOnFoundation(card, suit) {
   return topOf(f).rank === card.rank - 1;
 }
 
-function findFoundationTarget(card) {
-  return canPlayOnFoundation(card, card.suit) ? card.suit : null;
-}
-
 function canPlayOnTableau(card, destOwner, destCol) {
   const col = state.players[destOwner].tableau[destCol];
   if (col.length === 0) return true;
@@ -82,8 +80,23 @@ function canPlayOnTableau(card, destOwner, destCol) {
   return top.rank === card.rank + 1 && isRed(top.suit) !== isRed(card.suit);
 }
 
+// Loading an opponent's reserve or waste pile: same suit, adjacent rank (+/-1)
+function canLoadPile(card, pile) {
+  const top = topOf(pile);
+  if (!top) return false;
+  return card.suit === top.suit && Math.abs(card.rank - top.rank) === 1;
+}
+
+function isPlayable(owner, type, col) {
+  // Whose available cards: your own reserve top, your own drawn card, or
+  // the outermost card of ANY house (houses are shared by both players).
+  if (type === 'reserve' || type === 'drawn') return owner === state.current;
+  if (type === 'tcol') return true;
+  return false;
+}
+
 function selectCard(owner, type, col) {
-  if (owner !== state.current || state.winner) { state.selected = null; render(); return; }
+  if (state.winner || !isPlayable(owner, type, col)) { state.selected = null; render(); return; }
   const pile = pileRef(owner, type, col);
   const card = topOf(pile);
   if (!card || !card.faceUp) { state.selected = null; render(); return; }
@@ -124,6 +137,22 @@ function attemptMoveTo(destKind, destOwner, destCol) {
       state.players[destOwner].tableau[destCol].push(card);
       success = true;
     }
+  } else if (destKind === 'reserve') {
+    // can only load the opponent's reserve, never your own
+    if (destOwner !== state.current && canLoadPile(card, state.players[destOwner].reserve)) {
+      sourcePile.pop();
+      card.faceUp = true;
+      state.players[destOwner].reserve.push(card);
+      success = true;
+    }
+  } else if (destKind === 'waste') {
+    // can only load the opponent's waste, never your own
+    if (destOwner !== state.current && canLoadPile(card, state.players[destOwner].waste)) {
+      sourcePile.pop();
+      card.faceUp = true;
+      state.players[destOwner].waste.push(card);
+      success = true;
+    }
   }
 
   if (success) {
@@ -137,21 +166,22 @@ function attemptMoveTo(destKind, destOwner, destCol) {
 }
 
 function checkWin(owner) {
-  if (state.players[owner].stock.length === 0) {
+  const p = state.players[owner];
+  if (p.reserve.length === 0 && p.hand.length === 0 && p.waste.length === 0 && p.drawn.length === 0) {
     state.winner = owner;
   }
 }
 
+// Draw the next hand card face-up; it stays available to play until the
+// player discards it onto their own waste (which ends the turn).
 function drawCard(owner) {
   if (owner !== state.current || state.winner) return;
   const p = state.players[owner];
+  if (p.drawn.length > 0) return; // must resolve the current drawn card first
+
   if (p.hand.length === 0) {
-    if (p.waste.length === 0) {
-      // nothing to draw; just pass turn
-      endTurn();
-      return;
-    }
-    // reshuffle waste back into hand, face down, do not end turn
+    if (p.waste.length === 0) return; // nothing left to draw
+    // recycle waste back into hand, face down, without ending the turn
     p.hand = p.waste.reverse();
     p.hand.forEach(c => (c.faceUp = false));
     p.waste = [];
@@ -160,13 +190,24 @@ function drawCard(owner) {
   }
   const card = p.hand.pop();
   card.faceUp = true;
+  p.drawn.push(card);
+  state.selected = null;
+  render();
+}
+
+// Discarding the drawn card onto your own waste ends your turn.
+function discardDrawn(owner) {
+  if (owner !== state.current || state.winner) return;
+  const p = state.players[owner];
+  if (p.drawn.length === 0) return;
+  const card = p.drawn.pop();
   p.waste.push(card);
   endTurn();
 }
 
 function endTurn() {
   state.selected = null;
-  state.current = state.current === 1 ? 2 : 1;
+  state.current = other(state.current);
   render();
 }
 
@@ -184,13 +225,13 @@ function isSelected(owner, type, col) {
   return state.selected && state.selected.owner === owner && state.selected.type === type && state.selected.col === col;
 }
 
-function renderPileTop(elId, owner, type, col, clickable) {
+function renderSimplePile(elId, owner, type, onClick) {
   const el = document.getElementById(elId);
   el.innerHTML = '';
-  const pile = pileRef(owner, type, col);
+  const pile = pileRef(owner, type, null);
   const card = topOf(pile);
   if (card) {
-    const div = cardEl(card, isSelected(owner, type, col) ? 'selected' : '');
+    const div = cardEl(card, isSelected(owner, type, null) ? 'selected' : '');
     el.appendChild(div);
     if (pile.length > 1) {
       const count = document.createElement('div');
@@ -199,42 +240,57 @@ function renderPileTop(elId, owner, type, col, clickable) {
       el.appendChild(count);
     }
   }
-  el.onclick = () => {
-    if (!clickable) return;
-    const isSelectedPile = state.selected && state.selected.owner === owner && state.selected.type === type && state.selected.col === col;
-    if (state.selected && !isSelectedPile) {
-      // stock/waste piles are never valid move destinations
-      return;
-    }
-    if (card && card.faceUp && owner === state.current) {
-      selectCard(owner, type, col);
-    }
-  };
+  el.onclick = onClick;
 }
 
 function render() {
   for (const owner of [1, 2]) {
-    renderPileTop(`p${owner}-stock`, owner, 'stock', null, true);
-    renderPileTop(`p${owner}-waste`, owner, 'waste', null, true);
+    // Reserve: selectable only by its own player; otherwise it's a load target for the opponent.
+    renderSimplePile(`p${owner}-stock`, owner, 'reserve', () => {
+      const isSelectedPile = state.selected && state.selected.owner === owner && state.selected.type === 'reserve';
+      if (state.selected && !isSelectedPile) {
+        attemptMoveTo('reserve', owner, null);
+      } else {
+        selectCard(owner, 'reserve', null);
+      }
+    });
 
-    // hand pile (always face down, shows count, click = draw)
+    // Drawn card (revealed from hand): selectable only by its own player while pending.
+    // It's never a valid move destination, so ignore clicks on the opponent's drawn slot.
+    renderSimplePile(`p${owner}-drawn`, owner, 'drawn', () => {
+      if (owner === state.current) selectCard(owner, 'drawn', null);
+    });
+
+    // Waste: clicking your own waste with a pending drawn card discards it (ends turn).
+    // Clicking the opponent's waste with a card selected attempts to load it.
+    renderSimplePile(`p${owner}-waste`, owner, 'waste', () => {
+      if (owner === state.current) {
+        if (!state.selected && state.players[owner].drawn.length > 0) {
+          discardDrawn(owner);
+        }
+      } else if (state.selected) {
+        attemptMoveTo('waste', owner, null);
+      }
+    });
+
+    // Hand pile (always face down, shows count, click = draw next card)
     const handEl = document.getElementById(`p${owner}-hand`);
     handEl.innerHTML = '';
     if (state.players[owner].hand.length > 0) {
-      const fake = { faceUp: false };
-      handEl.appendChild(cardEl(fake));
+      handEl.appendChild(cardEl({ faceUp: false }));
       const count = document.createElement('div');
       count.className = 'pile-count';
       count.textContent = state.players[owner].hand.length;
       handEl.appendChild(count);
     }
+    handEl.onclick = () => drawCard(owner);
 
     const drawBtn = document.getElementById(`p${owner}-draw`);
-    drawBtn.disabled = state.current !== owner || !!state.winner;
+    drawBtn.disabled = state.current !== owner || !!state.winner || state.players[owner].drawn.length > 0;
     drawBtn.onclick = () => drawCard(owner);
   }
 
-  // proper tableau column rendering (4 distinct elements per player)
+  // Tableau houses: any house's top card is available to whoever's turn it is.
   document.querySelectorAll('.tcol').forEach(el => {
     const owner = Number(el.dataset.owner);
     const col = Number(el.dataset.col);
@@ -252,21 +308,18 @@ function render() {
       const isSelectedPile = state.selected && state.selected.owner === owner && state.selected.type === 'tcol' && state.selected.col === col;
       if (state.selected && !isSelectedPile) {
         attemptMoveTo('tcol', owner, col);
-      } else if (top && top.faceUp && owner === state.current) {
+      } else if (top && top.faceUp) {
         selectCard(owner, 'tcol', col);
       }
     };
   });
 
-  // foundations
+  // Foundations
   document.querySelectorAll('.foundation').forEach(el => {
     const suit = el.dataset.suit;
-    const inner = el.querySelectorAll('.card');
-    inner.forEach(c => c.remove());
+    el.querySelectorAll('.card').forEach(c => c.remove());
     const card = topOf(state.foundations[suit]);
-    if (card) {
-      el.appendChild(cardEl(card));
-    }
+    if (card) el.appendChild(cardEl(card));
     el.onclick = () => {
       if (state.selected) attemptMoveTo('foundation', suit, null);
     };
@@ -277,9 +330,11 @@ function render() {
 
   const banner = document.getElementById('banner');
   if (state.winner) {
-    banner.textContent = `Player ${state.winner} wins! Their stock pile is empty.`;
+    banner.textContent = `Player ${state.winner} wins! Reserve, hand, and waste are all empty.`;
   } else {
-    banner.textContent = `Player ${state.current}'s turn`;
+    const p = state.players[state.current];
+    const hint = p.drawn.length > 0 ? ' — play or discard your drawn card to end your turn' : '';
+    banner.textContent = `Player ${state.current}'s turn${hint}`;
   }
 }
 

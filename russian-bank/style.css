@@ -134,7 +134,7 @@ header button + button { margin-left: 8px; }
 
 .card .bottom { align-self: flex-end; transform: rotate(180deg); }
 
-.tcol .card, .stock .card, .waste .card, .hand .card, .foundation .card {
+.tcol .card, .stock .card, .waste .card, .hand .card, .drawn .card, .foundation .card {
   position: absolute;
 }
 
