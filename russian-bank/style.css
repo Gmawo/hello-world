@@ -67,9 +67,9 @@ header button + button { margin-left: 8px; }
 
 #board {
   display: grid;
-  grid-template-columns: 64px 84px 84px 84px 84px;
+  grid-template-columns: 90px 84px 84px 84px 90px;
   grid-template-rows: auto auto auto auto auto auto;
-  gap: 10px 14px;
+  gap: 14px 18px;
   justify-content: center;
   align-items: start;
   padding: 6px 10px 20px;
@@ -89,10 +89,21 @@ header button + button { margin-left: 8px; }
   background: rgba(0,0,0,0.12);
 }
 
+.reserve, .waste, .hand {
+  width: 84px;
+  height: 118px;
+}
+
 .drawn {
-  width: 56px;
-  height: 84px;
+  width: 64px;
+  height: 92px;
   border-color: rgba(255,224,102,0.45);
+}
+
+.reserve .card, .waste .card, .hand .card, .drawn .card {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .foundation { background: rgba(255,255,255,0.06); }
@@ -236,11 +247,12 @@ dialog button {
 
 @media (max-width: 480px) {
   #board {
-    grid-template-columns: 46px 64px 64px 64px 64px;
-    gap: 6px 8px;
+    grid-template-columns: 66px 64px 64px 64px 66px;
+    gap: 8px 10px;
   }
   .pile { width: 54px; height: 78px; }
-  .drawn { width: 42px; height: 64px; }
+  .reserve, .waste, .hand { width: 64px; height: 92px; }
+  .drawn { width: 48px; height: 70px; }
   .card { width: 50px; height: 74px; font-size: 0.85rem; padding: 2px 4px; }
   .pip { font-size: 0.6rem; }
   .pip-ace { font-size: 1.3rem; }
