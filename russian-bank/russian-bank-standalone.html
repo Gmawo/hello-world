@@ -595,16 +595,22 @@ function renderPile(el, owner, type, col) {
 }
 
 // Houses show the full cascading sequence (only the outermost card is draggable).
-// They expand horizontally, toward the foundations in the middle of the board.
+// They expand horizontally, away from the foundations in the middle of the board.
 function renderHouse(el, owner, col) {
   el.innerHTML = '';
   const pile = state.players[owner].tableau[col];
-  const towardCenter = owner === 2 ? 'left' : 'right'; // P2's houses sit on the left edge, P1's on the right edge
+  // P2's houses sit on the left edge of the board, so fanning away from the
+  // center foundations means growing further left (anchor via "right" so the
+  // offset pushes the card leftward). P1's houses sit on the right edge, so
+  // fanning away from center means growing further right (anchor via "left").
+  const away = owner === 2 ? 'right' : 'left';
+  const toward = owner === 2 ? 'left' : 'right';
   pile.forEach((card, idx) => {
     const isTop = idx === pile.length - 1;
     const draggable = isTop && card.faceUp && isPlayable(owner, 'tcol');
     const div = cardEl(card, draggable ? 'draggable' : '');
-    div.style[towardCenter] = `${idx * 22}px`;
+    div.style[toward] = 'auto';
+    div.style[away] = `${idx * 22}px`;
     div.style.zIndex = idx;
     el.appendChild(div);
     if (draggable) attachDragHandlers(div, { owner, type: 'tcol', col });
