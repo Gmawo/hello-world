@@ -5,9 +5,6 @@ on:
     branches:
       - master
       - claude/russian-bank-game-2in8lp
-    paths:
-      - 'russian-bank/**'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
