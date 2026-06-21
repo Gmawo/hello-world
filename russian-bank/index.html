@@ -62,22 +62,22 @@
     <div class="pile-group cell" style="grid-column:5; grid-row:4;"><div class="pile tcol" id="p1-house-1" data-zone="tcol" data-owner="1" data-col="1"></div></div>
     <div class="pile-group cell" style="grid-column:5; grid-row:5;"><div class="pile tcol" id="p1-house-0" data-zone="tcol" data-owner="1" data-col="0"></div></div>
 
-    <!-- Row 6: Player 1's hand / waste / reserve, plus drawn-card slot -->
+    <!-- Row 6: Player 1's drawn / reserve / waste / hand, same column order as Player 2's row -->
+    <div class="pile-group cell" style="grid-column:1; grid-row:6;">
+      <div class="pile-caption">Drawn</div>
+      <div class="pile drawn" id="p1-drawn" data-zone="drawn" data-owner="1"></div>
+    </div>
     <div class="pile-group cell" style="grid-column:2; grid-row:6;">
-      <div class="pile-caption">Hand</div>
-      <div class="pile hand" id="p1-hand" data-zone="hand" data-owner="1"></div>
+      <div class="pile-caption">Reserve</div>
+      <div class="pile reserve" id="p1-reserve" data-zone="reserve" data-owner="1"></div>
     </div>
     <div class="pile-group cell" style="grid-column:3/5; grid-row:6;">
       <div class="pile-caption">Waste</div>
       <div class="pile waste" id="p1-waste" data-zone="waste" data-owner="1"></div>
     </div>
     <div class="pile-group cell" style="grid-column:5; grid-row:6;">
-      <div class="pile-caption">Reserve</div>
-      <div class="pile reserve" id="p1-reserve" data-zone="reserve" data-owner="1"></div>
-    </div>
-    <div class="pile-group cell" style="grid-column:1; grid-row:6;">
-      <div class="pile-caption">Drawn</div>
-      <div class="pile drawn" id="p1-drawn" data-zone="drawn" data-owner="1"></div>
+      <div class="pile-caption">Hand</div>
+      <div class="pile hand" id="p1-hand" data-zone="hand" data-owner="1"></div>
     </div>
   </main>
 

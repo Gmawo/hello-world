@@ -74,9 +74,9 @@ header button + button { margin-left: 8px; }
 
 #board {
   display: grid;
-  grid-template-columns: 64px 84px 84px 84px 84px;
+  grid-template-columns: 90px 84px 84px 84px 90px;
   grid-template-rows: auto auto auto auto auto auto;
-  gap: 10px 14px;
+  gap: 14px 18px;
   justify-content: center;
   align-items: start;
   padding: 6px 10px 20px;
@@ -96,10 +96,21 @@ header button + button { margin-left: 8px; }
   background: rgba(0,0,0,0.12);
 }
 
+.reserve, .waste, .hand {
+  width: 84px;
+  height: 118px;
+}
+
 .drawn {
-  width: 56px;
-  height: 84px;
+  width: 64px;
+  height: 92px;
   border-color: rgba(255,224,102,0.45);
+}
+
+.reserve .card, .waste .card, .hand .card, .drawn .card {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .foundation { background: rgba(255,255,255,0.06); }
@@ -243,11 +254,12 @@ dialog button {
 
 @media (max-width: 480px) {
   #board {
-    grid-template-columns: 46px 64px 64px 64px 64px;
-    gap: 6px 8px;
+    grid-template-columns: 66px 64px 64px 64px 66px;
+    gap: 8px 10px;
   }
   .pile { width: 54px; height: 78px; }
-  .drawn { width: 42px; height: 64px; }
+  .reserve, .waste, .hand { width: 64px; height: 92px; }
+  .drawn { width: 48px; height: 70px; }
   .card { width: 50px; height: 74px; font-size: 0.85rem; padding: 2px 4px; }
   .pip { font-size: 0.6rem; }
   .pip-ace { font-size: 1.3rem; }
@@ -314,22 +326,22 @@ dialog button {
     <div class="pile-group cell" style="grid-column:5; grid-row:4;"><div class="pile tcol" id="p1-house-1" data-zone="tcol" data-owner="1" data-col="1"></div></div>
     <div class="pile-group cell" style="grid-column:5; grid-row:5;"><div class="pile tcol" id="p1-house-0" data-zone="tcol" data-owner="1" data-col="0"></div></div>
 
-    <!-- Row 6: Player 1's hand / waste / reserve, plus drawn-card slot -->
+    <!-- Row 6: Player 1's drawn / reserve / waste / hand, same column order as Player 2's row -->
+    <div class="pile-group cell" style="grid-column:1; grid-row:6;">
+      <div class="pile-caption">Drawn</div>
+      <div class="pile drawn" id="p1-drawn" data-zone="drawn" data-owner="1"></div>
+    </div>
     <div class="pile-group cell" style="grid-column:2; grid-row:6;">
-      <div class="pile-caption">Hand</div>
-      <div class="pile hand" id="p1-hand" data-zone="hand" data-owner="1"></div>
+      <div class="pile-caption">Reserve</div>
+      <div class="pile reserve" id="p1-reserve" data-zone="reserve" data-owner="1"></div>
     </div>
     <div class="pile-group cell" style="grid-column:3/5; grid-row:6;">
       <div class="pile-caption">Waste</div>
       <div class="pile waste" id="p1-waste" data-zone="waste" data-owner="1"></div>
     </div>
     <div class="pile-group cell" style="grid-column:5; grid-row:6;">
-      <div class="pile-caption">Reserve</div>
-      <div class="pile reserve" id="p1-reserve" data-zone="reserve" data-owner="1"></div>
-    </div>
-    <div class="pile-group cell" style="grid-column:1; grid-row:6;">
-      <div class="pile-caption">Drawn</div>
-      <div class="pile drawn" id="p1-drawn" data-zone="drawn" data-owner="1"></div>
+      <div class="pile-caption">Hand</div>
+      <div class="pile hand" id="p1-hand" data-zone="hand" data-owner="1"></div>
     </div>
   </main>
 
