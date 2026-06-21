@@ -10,6 +10,62 @@ function rankLabel(r) { return RANK_LABEL[r] || String(r); }
 function isRed(suit) { return RED_SUITS.has(suit); }
 function other(owner) { return owner === 1 ? 2 : 1; }
 
+// ---------- Card face style ----------
+// "classic" draws a pip layout (or face badge) in the middle of the card,
+// in addition to the corner indices everyone gets. "simple" just keeps the
+// corner indices. More styles can be registered here later — cardEl() only
+// needs a case added to buildCenter() and a `style-<name>` CSS hook.
+const CARD_STYLES = ['classic', 'simple'];
+let cardStyle = CARD_STYLES.includes(localStorage.getItem('cardStyle'))
+  ? localStorage.getItem('cardStyle')
+  : 'classic';
+
+// [x%, y%, flip] — flip rotates the pip 180deg, used for the bottom half so
+// it reads right-side-up when the card itself is read from either end.
+const PIP_LAYOUT = {
+  2: [[50, 22, 0], [50, 78, 1]],
+  3: [[50, 18, 0], [50, 50, 0], [50, 82, 1]],
+  4: [[25, 22, 0], [75, 22, 0], [25, 78, 1], [75, 78, 1]],
+  5: [[25, 22, 0], [75, 22, 0], [50, 50, 0], [25, 78, 1], [75, 78, 1]],
+  6: [[25, 20, 0], [75, 20, 0], [25, 50, 0], [75, 50, 0], [25, 80, 1], [75, 80, 1]],
+  7: [[25, 18, 0], [75, 18, 0], [50, 34, 0], [25, 50, 0], [75, 50, 0], [25, 82, 1], [75, 82, 1]],
+  8: [[25, 15, 0], [75, 15, 0], [50, 30, 0], [25, 50, 0], [75, 50, 0], [50, 70, 1], [25, 85, 1], [75, 85, 1]],
+  9: [[25, 13, 0], [75, 13, 0], [25, 37, 0], [75, 37, 0], [50, 50, 0], [25, 63, 1], [75, 63, 1], [25, 87, 1], [75, 87, 1]],
+  10: [[25, 12, 0], [75, 12, 0], [50, 25, 0], [25, 37, 0], [75, 37, 0], [25, 63, 1], [75, 63, 1], [50, 75, 1], [25, 88, 1], [75, 88, 1]],
+};
+
+function buildCenter(card) {
+  const wrap = document.createElement('div');
+  wrap.className = 'center';
+  const symbol = SUIT_SYMBOL[card.suit];
+
+  if (card.rank === 1) {
+    const pip = document.createElement('span');
+    pip.className = 'pip pip-ace';
+    pip.style.left = '50%';
+    pip.style.top = '50%';
+    pip.style.transform = 'translate(-50%, -50%)';
+    pip.textContent = symbol;
+    wrap.appendChild(pip);
+  } else if (card.rank >= 11) {
+    const badge = document.createElement('div');
+    badge.className = 'face-badge';
+    badge.innerHTML = `<span class="face-letter">${rankLabel(card.rank)}</span><span class="face-suit">${symbol}</span>`;
+    wrap.appendChild(badge);
+  } else {
+    for (const [x, y, flip] of PIP_LAYOUT[card.rank] || []) {
+      const pip = document.createElement('span');
+      pip.className = 'pip';
+      pip.style.left = `${x}%`;
+      pip.style.top = `${y}%`;
+      pip.style.transform = `translate(-50%, -50%)${flip ? ' rotate(180deg)' : ''}`;
+      pip.textContent = symbol;
+      wrap.appendChild(pip);
+    }
+  }
+  return wrap;
+}
+
 function buildDeck(owner) {
   const cards = [];
   for (const suit of SUITS) {
@@ -187,10 +243,11 @@ function endTurn() {
 
 function cardEl(card, extraClass) {
   const div = document.createElement('div');
-  div.className = 'card ' + (card.faceUp ? (isRed(card.suit) ? 'red' : 'black') : 'facedown');
+  div.className = 'card style-' + cardStyle + ' ' + (card.faceUp ? (isRed(card.suit) ? 'red' : 'black') : 'facedown');
   if (extraClass) div.className += ' ' + extraClass;
   if (card.faceUp) {
     div.innerHTML = `<div class="top">${rankLabel(card.rank)}${SUIT_SYMBOL[card.suit]}</div><div class="bottom">${rankLabel(card.rank)}${SUIT_SYMBOL[card.suit]}</div>`;
+    div.appendChild(buildCenter(card));
   }
   return div;
 }
@@ -311,7 +368,6 @@ function renderHouse(el, owner, col) {
     el.appendChild(div);
     if (draggable) attachDragHandlers(div, { owner, type: 'tcol', col });
   });
-  el.style.minWidth = `${70 + Math.max(0, pile.length - 1) * 22}px`;
 }
 
 function render() {
@@ -366,6 +422,14 @@ function render() {
 
 document.getElementById('newGameBtn').addEventListener('click', () => {
   state = newGame();
+  render();
+});
+
+const cardStyleSelect = document.getElementById('cardStyleSelect');
+cardStyleSelect.value = cardStyle;
+cardStyleSelect.addEventListener('change', () => {
+  cardStyle = cardStyleSelect.value;
+  localStorage.setItem('cardStyle', cardStyle);
   render();
 });
 
