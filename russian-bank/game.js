@@ -368,7 +368,6 @@ function renderHouse(el, owner, col) {
     el.appendChild(div);
     if (draggable) attachDragHandlers(div, { owner, type: 'tcol', col });
   });
-  el.style.minWidth = `${70 + Math.max(0, pile.length - 1) * 22}px`;
 }
 
 function render() {

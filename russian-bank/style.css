@@ -180,16 +180,13 @@ header button + button { margin-left: 8px; }
   position: absolute;
 }
 
+/* .tcol keeps a fixed width (no minWidth growth in JS) so flex centering
+   in .cell never recomputes its position as a house fills up — the first
+   card dealt always lands at this exact spot, and later cards offset
+   further from it via left/right in renderHouse() without the container
+   itself ever moving. */
 .tcol { position: relative; height: 100px; }
 .tcol .card { box-shadow: 0 3px 4px rgba(0,0,0,0.5); }
-
-/* Houses must anchor to their outer board edge and grow away from it, not
-   stay centered in their grid cell (flex centering would split growth
-   symmetrically in both directions, undoing the outward fan effect). */
-.pile-group:has(> .tcol) { position: relative; min-height: 100px; }
-.pile-group > .tcol { position: absolute; top: 0; }
-#p2-house-0, #p2-house-1, #p2-house-2, #p2-house-3 { right: 0; }
-#p1-house-0, #p1-house-1, #p1-house-2, #p1-house-3 { left: 0; }
 
 .controls {
   display: flex;
