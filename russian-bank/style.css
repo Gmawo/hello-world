@@ -134,7 +134,7 @@ header button + button { margin-left: 8px; }
   position: absolute;
 }
 
-.tcol { position: relative; min-height: 100px; }
+.tcol { position: relative; height: 100px; }
 .tcol .card { box-shadow: 0 3px 4px rgba(0,0,0,0.5); }
 
 .controls {

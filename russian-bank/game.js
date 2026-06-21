@@ -291,19 +291,21 @@ function renderPile(el, owner, type, col) {
 }
 
 // Houses show the full cascading sequence (only the outermost card is draggable).
+// They expand horizontally, toward the foundations in the middle of the board.
 function renderHouse(el, owner, col) {
   el.innerHTML = '';
   const pile = state.players[owner].tableau[col];
+  const towardCenter = owner === 2 ? 'left' : 'right'; // P2's houses sit on the left edge, P1's on the right edge
   pile.forEach((card, idx) => {
     const isTop = idx === pile.length - 1;
     const draggable = isTop && card.faceUp && isPlayable(owner, 'tcol');
     const div = cardEl(card, draggable ? 'draggable' : '');
-    div.style.top = `${idx * 18}px`;
+    div.style[towardCenter] = `${idx * 22}px`;
     div.style.zIndex = idx;
     el.appendChild(div);
     if (draggable) attachDragHandlers(div, { owner, type: 'tcol', col });
   });
-  el.style.minHeight = `${100 + Math.max(0, pile.length - 1) * 18}px`;
+  el.style.minWidth = `${70 + Math.max(0, pile.length - 1) * 22}px`;
 }
 
 function render() {
