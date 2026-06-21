@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Russian Bank (Crapette)</title>
 <style>
 * { box-sizing: border-box; }
@@ -39,34 +40,36 @@ header button + button { margin-left: 8px; }
 
 #banner {
   text-align: center;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: bold;
   min-height: 1.8em;
   color: #ffe066;
   text-shadow: 0 0 8px rgba(0,0,0,0.6);
-}
-
-#board {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 10px 20px 30px;
-}
-
-.player-area .row {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
+  padding: 4px 10px;
 }
 
 .player-label {
+  text-align: center;
   font-weight: bold;
   font-size: 1.1rem;
-  margin: 4px 0;
+  letter-spacing: 0.04em;
+  margin: 6px 0;
 }
 
+#board {
+  display: grid;
+  grid-template-columns: 64px 84px 84px 84px 84px;
+  grid-template-rows: auto auto auto auto auto auto;
+  gap: 10px 14px;
+  justify-content: center;
+  align-items: start;
+  padding: 6px 10px 20px;
+}
+
+.cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
 .pile-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.pile-caption { font-size: 0.75rem; opacity: 0.8; }
+.pile-caption { font-size: 0.7rem; opacity: 0.8; white-space: nowrap; }
 
 .pile {
   width: 70px;
@@ -77,31 +80,13 @@ header button + button { margin-left: 8px; }
   background: rgba(0,0,0,0.12);
 }
 
-.tableau {
-  display: flex;
-  gap: 14px;
+.drawn {
+  width: 56px;
+  height: 84px;
+  border-color: rgba(255,224,102,0.45);
 }
 
-.foundations {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  padding: 10px 0;
-}
-
-.foundation {
-  background: rgba(255,255,255,0.06);
-}
-.foundation::before {
-  content: attr(data-suit);
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  opacity: 0.25;
-}
+.foundation { background: rgba(255,255,255,0.06); }
 
 .card {
   position: absolute;
@@ -119,7 +104,6 @@ header button + button { margin-left: 8px; }
   font-weight: bold;
   font-size: 1.1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-  cursor: pointer;
   user-select: none;
 }
 
@@ -129,39 +113,56 @@ header button + button { margin-left: 8px; }
 .card.facedown {
   background: repeating-linear-gradient(45deg, #2a4d8f, #2a4d8f 6px, #1e3a6b 6px, #1e3a6b 12px);
   color: transparent;
-  cursor: default;
 }
 
-.card.selected {
-  outline: 3px solid gold;
-  box-shadow: 0 0 10px 2px gold;
-  transform: translateY(-4px);
+.card.draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.card.drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.9;
+  transform: scale(1.06) rotate(-2deg);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.6);
+}
+
+.card.drag-source-hidden { opacity: 0.25; }
+
+.drop-target-hint {
+  outline: 3px dashed #ffe066;
 }
 
 .card .bottom { align-self: flex-end; transform: rotate(180deg); }
 
-.tcol .card, .stock .card, .waste .card, .hand .card, .drawn .card, .foundation .card {
+.tcol .card, .reserve .card, .waste .card, .hand .card, .drawn .card, .foundation .card {
   position: absolute;
 }
 
 .tcol { position: relative; min-height: 100px; }
-.tcol .card:nth-child(n) { top: 0; }
 .tcol .card { box-shadow: 0 3px 4px rgba(0,0,0,0.5); }
 
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 6px 0 24px;
+}
+
 .drawBtn {
-  align-self: center;
-  padding: 8px 12px;
+  padding: 8px 14px;
   border: none;
   border-radius: 6px;
   background: #e0e0e0;
   color: #222;
   font-weight: bold;
   cursor: pointer;
-  margin-bottom: 2px;
 }
 .drawBtn:disabled { opacity: 0.4; cursor: default; }
 
-.active-turn { box-shadow: inset 0 0 0 3px #ffe066; border-radius: 10px; }
+.active-turn .pile { box-shadow: inset 0 0 0 2px #ffe066; }
 
 dialog {
   border-radius: 10px;
@@ -185,8 +186,18 @@ dialog button {
   bottom: -18px;
   width: 100%;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   opacity: 0.8;
+}
+
+@media (max-width: 480px) {
+  #board {
+    grid-template-columns: 46px 64px 64px 64px 64px;
+    gap: 6px 8px;
+  }
+  .pile { width: 54px; height: 78px; }
+  .drawn { width: 42px; height: 64px; }
+  .card { width: 50px; height: 74px; font-size: 0.85rem; padding: 2px 4px; }
 }
 
 </style>
@@ -200,91 +211,91 @@ dialog button {
 
   <div id="banner"></div>
 
+  <div class="player-label top">Player 2</div>
+
   <main id="board">
-    <section class="player-area" id="area-2">
-      <div class="player-label">Player 2</div>
-      <div class="row">
-        <div class="pile-group">
-          <div class="pile stock" id="p2-stock"></div>
-          <div class="pile-caption">Reserve</div>
-        </div>
-        <div class="pile-group">
-          <div class="pile waste" id="p2-waste"></div>
-          <div class="pile-caption">Waste</div>
-        </div>
-        <div class="tableau" id="p2-tableau">
-          <div class="pile tcol" data-owner="2" data-col="0"></div>
-          <div class="pile tcol" data-owner="2" data-col="1"></div>
-          <div class="pile tcol" data-owner="2" data-col="2"></div>
-          <div class="pile tcol" data-owner="2" data-col="3"></div>
-        </div>
-        <div class="pile-group">
-          <div class="pile hand" id="p2-hand"></div>
-          <div class="pile-caption">Hand</div>
-        </div>
-        <div class="pile-group">
-          <div class="pile drawn" id="p2-drawn"></div>
-          <div class="pile-caption">Drawn</div>
-        </div>
-        <button class="drawBtn" id="p2-draw">Draw</button>
-      </div>
-    </section>
+    <!-- Row 1: Player 2's reserve / waste / hand, plus drawn-card slot -->
+    <div class="pile-group cell" style="grid-column:1; grid-row:1;">
+      <div class="pile-caption">Drawn</div>
+      <div class="pile drawn" id="p2-drawn" data-zone="drawn" data-owner="2"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:2; grid-row:1;">
+      <div class="pile-caption">Reserve</div>
+      <div class="pile reserve" id="p2-reserve" data-zone="reserve" data-owner="2"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:3/5; grid-row:1;">
+      <div class="pile-caption">Waste</div>
+      <div class="pile waste" id="p2-waste" data-zone="waste" data-owner="2"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:1;">
+      <div class="pile-caption">Hand</div>
+      <div class="pile hand" id="p2-hand" data-zone="hand" data-owner="2"></div>
+    </div>
 
-    <section class="foundations" id="foundations">
-      <div class="pile foundation" data-suit="S"></div>
-      <div class="pile foundation" data-suit="H"></div>
-      <div class="pile foundation" data-suit="C"></div>
-      <div class="pile foundation" data-suit="D"></div>
-    </section>
+    <!-- Rows 2-5: houses flanking the 8 shared foundations -->
+    <div class="pile-group cell" style="grid-column:2; grid-row:2;"><div class="pile tcol" id="p2-house-0" data-zone="tcol" data-owner="2" data-col="0"></div></div>
+    <div class="pile-group cell" style="grid-column:2; grid-row:3;"><div class="pile tcol" id="p2-house-1" data-zone="tcol" data-owner="2" data-col="1"></div></div>
+    <div class="pile-group cell" style="grid-column:2; grid-row:4;"><div class="pile tcol" id="p2-house-2" data-zone="tcol" data-owner="2" data-col="2"></div></div>
+    <div class="pile-group cell" style="grid-column:2; grid-row:5;"><div class="pile tcol" id="p2-house-3" data-zone="tcol" data-owner="2" data-col="3"></div></div>
 
-    <section class="player-area" id="area-1">
-      <div class="row">
-        <div class="pile-group">
-          <div class="pile stock" id="p1-stock"></div>
-          <div class="pile-caption">Reserve</div>
-        </div>
-        <div class="pile-group">
-          <div class="pile waste" id="p1-waste"></div>
-          <div class="pile-caption">Waste</div>
-        </div>
-        <div class="tableau" id="p1-tableau">
-          <div class="pile tcol" data-owner="1" data-col="0"></div>
-          <div class="pile tcol" data-owner="1" data-col="1"></div>
-          <div class="pile tcol" data-owner="1" data-col="2"></div>
-          <div class="pile tcol" data-owner="1" data-col="3"></div>
-        </div>
-        <div class="pile-group">
-          <div class="pile hand" id="p1-hand"></div>
-          <div class="pile-caption">Hand</div>
-        </div>
-        <div class="pile-group">
-          <div class="pile drawn" id="p1-drawn"></div>
-          <div class="pile-caption">Drawn</div>
-        </div>
-        <button class="drawBtn" id="p1-draw">Draw</button>
-      </div>
-      <div class="player-label">Player 1</div>
-    </section>
+    <div class="pile-group cell" style="grid-column:3; grid-row:2;"><div class="pile foundation" id="found-0" data-zone="foundation" data-found="0"></div></div>
+    <div class="pile-group cell" style="grid-column:4; grid-row:2;"><div class="pile foundation" id="found-1" data-zone="foundation" data-found="1"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:3;"><div class="pile foundation" id="found-2" data-zone="foundation" data-found="2"></div></div>
+    <div class="pile-group cell" style="grid-column:4; grid-row:3;"><div class="pile foundation" id="found-3" data-zone="foundation" data-found="3"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:4;"><div class="pile foundation" id="found-4" data-zone="foundation" data-found="4"></div></div>
+    <div class="pile-group cell" style="grid-column:4; grid-row:4;"><div class="pile foundation" id="found-5" data-zone="foundation" data-found="5"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:5;"><div class="pile foundation" id="found-6" data-zone="foundation" data-found="6"></div></div>
+    <div class="pile-group cell" style="grid-column:4; grid-row:5;"><div class="pile foundation" id="found-7" data-zone="foundation" data-found="7"></div></div>
+
+    <div class="pile-group cell" style="grid-column:5; grid-row:2;"><div class="pile tcol" id="p1-house-3" data-zone="tcol" data-owner="1" data-col="3"></div></div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:3;"><div class="pile tcol" id="p1-house-2" data-zone="tcol" data-owner="1" data-col="2"></div></div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:4;"><div class="pile tcol" id="p1-house-1" data-zone="tcol" data-owner="1" data-col="1"></div></div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:5;"><div class="pile tcol" id="p1-house-0" data-zone="tcol" data-owner="1" data-col="0"></div></div>
+
+    <!-- Row 6: Player 1's hand / waste / reserve, plus drawn-card slot -->
+    <div class="pile-group cell" style="grid-column:2; grid-row:6;">
+      <div class="pile-caption">Hand</div>
+      <div class="pile hand" id="p1-hand" data-zone="hand" data-owner="1"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:3/5; grid-row:6;">
+      <div class="pile-caption">Waste</div>
+      <div class="pile waste" id="p1-waste" data-zone="waste" data-owner="1"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:6;">
+      <div class="pile-caption">Reserve</div>
+      <div class="pile reserve" id="p1-reserve" data-zone="reserve" data-owner="1"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:1; grid-row:6;">
+      <div class="pile-caption">Drawn</div>
+      <div class="pile drawn" id="p1-drawn" data-zone="drawn" data-owner="1"></div>
+    </div>
   </main>
+
+  <div class="player-label bottom">Player 1</div>
+
+  <div class="controls">
+    <button class="drawBtn" id="p1-draw">Player 1: Draw</button>
+    <button class="drawBtn" id="p2-draw">Player 2: Draw</button>
+  </div>
 
   <dialog id="rulesDialog">
     <h2>How to play (Russian Bank / Zank-Patience / Crapette)</h2>
     <ul>
-      <li>Each player has their own deck split into a <strong>Reserve</strong> (top card face up), a <strong>Hand</strong> (face down), a <strong>Waste</strong> pile, and 4 <strong>Houses</strong> (tableau columns). The 8 houses and the 4 shared <strong>Foundations</strong> in the middle belong to <em>both</em> players.</li>
+      <li>Each player has their own deck split into a <strong>Reserve</strong> (top card face up), a <strong>Hand</strong> (face down), a <strong>Waste</strong> pile, and 4 <strong>Houses</strong> (the columns flanking the foundations). The 8 houses and the 8 shared <strong>Foundation</strong> slots in the middle belong to <em>both</em> players.</li>
       <li><strong>Goal:</strong> be the first to empty your Reserve, Hand, and Waste piles completely.</li>
       <li><strong>Available cards</strong> you may play on your turn: the top card of <em>your own</em> Reserve, your currently <em>Drawn</em> card (see below), or the outermost card of <strong>any</strong> house &mdash; yours or your opponent's.</li>
-      <li>An available card can be played to:
+      <li><strong>Drag</strong> an available card onto:
         <ul>
-          <li>A <strong>Foundation</strong> &mdash; empty foundations only take an Ace, then build up by suit (A,2,3...K).</li>
+          <li>A <strong>Foundation</strong> slot &mdash; an empty slot only takes an Ace, then builds up by suit (A,2,3...K). There are 8 slots since both decks' duplicate ranks need somewhere to go.</li>
           <li>A <strong>House</strong> (yours or your opponent's) &mdash; one rank lower and the opposite color of that house's top card, or anything if the house is empty.</li>
-          <li>Your <strong>opponent's Reserve or Waste pile</strong> &mdash; "loading" it with a card of the <em>same suit</em>, one rank higher or lower than its current top card. You can keep loading as long as you have a card that fits the new top.</li>
+          <li>Your <strong>opponent's Reserve or Waste pile</strong> &mdash; "loading" it with a card of the <em>same suit</em>, one rank higher or lower than its current top card. Keep loading as long as you have a card that fits the new top.</li>
         </ul>
       </li>
-      <li>Click an available card to select it (highlighted gold), then click a legal destination to play it. Click it again to deselect.</li>
+      <li>Drop it back where it started (or anywhere invalid) and the move is simply cancelled.</li>
       <li>Play in <strong>any order you like</strong> &mdash; there's no forced priority here, just make whichever legal move benefits you most.</li>
-      <li>Click <strong>Draw</strong> to reveal the next Hand card &mdash; it becomes available to play just like your Reserve. If you don't (or can't) play it, click your own <strong>Waste</strong> pile to discard it there, which <strong>ends your turn</strong>. If you do play it, you may draw again and keep your turn going.</li>
-      <li>If your Hand runs out, clicking Draw instead flips your Waste back into a face-down Hand, without ending your turn.</li>
-      <li>You can never move a card from your own Waste pile, and you can never play onto your own Reserve or Waste (only your opponent's, or via the discard-to-end-turn action above).</li>
+      <li>Tap your Hand pile (or its Draw button) to reveal the next Hand card &mdash; it becomes available to play just like your Reserve. If you don't (or can't) play it, drag it onto your own <strong>Waste</strong> pile to discard it, which <strong>ends your turn</strong>. If you do play it elsewhere, you may draw again and keep your turn going.</li>
+      <li>If your Hand runs out, tapping it instead flips your Waste back into a face-down Hand, without ending your turn.</li>
+      <li>You can never move a card from your own Waste pile, and you can never play onto your own Reserve or Waste (only your opponent's, or via the discard-to-end-turn drag above).</li>
       <li>First player to empty Reserve + Hand + Waste wins!</li>
     </ul>
     <button id="closeRules">Close</button>
@@ -297,6 +308,7 @@ const SUITS = ['S', 'H', 'C', 'D'];
 const SUIT_SYMBOL = { S: '♠', H: '♥', C: '♣', D: '♦' };
 const RED_SUITS = new Set(['H', 'D']);
 const RANK_LABEL = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+const FOUNDATION_COUNT = 8; // 2 decks x 4 suits => up to 2 concurrent runs per suit
 
 function rankLabel(r) { return RANK_LABEL[r] || String(r); }
 function isRed(suit) { return RED_SUITS.has(suit); }
@@ -339,9 +351,8 @@ function makePlayerState(owner) {
 function newGame() {
   return {
     players: { 1: makePlayerState(1), 2: makePlayerState(2) },
-    foundations: { S: [], H: [], C: [], D: [] },
+    foundations: Array.from({ length: FOUNDATION_COUNT }, () => []),
     current: 1,
-    selected: null, // { owner, type: 'reserve'|'drawn'|'tcol', col }
     winner: null,
   };
 }
@@ -359,11 +370,11 @@ function pileRef(owner, type, col) {
   return null;
 }
 
-function canPlayOnFoundation(card, suit) {
-  const f = state.foundations[suit];
-  if (card.suit !== suit) return false;
+function canPlayOnFoundation(card, index) {
+  const f = state.foundations[index];
   if (f.length === 0) return card.rank === 1;
-  return topOf(f).rank === card.rank - 1;
+  const top = topOf(f);
+  return top.suit === card.suit && top.rank === card.rank - 1;
 }
 
 function canPlayOnTableau(card, destOwner, destCol) {
@@ -380,26 +391,12 @@ function canLoadPile(card, pile) {
   return card.suit === top.suit && Math.abs(card.rank - top.rank) === 1;
 }
 
-function isPlayable(owner, type, col) {
-  // Whose available cards: your own reserve top, your own drawn card, or
-  // the outermost card of ANY house (houses are shared by both players).
+// Whose available cards: your own reserve top, your own drawn card, or
+// the outermost card of ANY house (houses are shared by both players).
+function isPlayable(owner, type) {
   if (type === 'reserve' || type === 'drawn') return owner === state.current;
   if (type === 'tcol') return true;
   return false;
-}
-
-function selectCard(owner, type, col) {
-  if (state.winner || !isPlayable(owner, type, col)) { state.selected = null; render(); return; }
-  const pile = pileRef(owner, type, col);
-  const card = topOf(pile);
-  if (!card || !card.faceUp) { state.selected = null; render(); return; }
-
-  if (state.selected && state.selected.owner === owner && state.selected.type === type && state.selected.col === col) {
-    state.selected = null; // toggle off
-  } else {
-    state.selected = { owner, type, col };
-  }
-  render();
 }
 
 function flipNewTopIfNeeded(pile) {
@@ -407,62 +404,63 @@ function flipNewTopIfNeeded(pile) {
   if (top) top.faceUp = true;
 }
 
-function attemptMoveTo(destKind, destOwner, destCol) {
-  if (!state.selected || state.winner) return;
-  const { owner, type, col } = state.selected;
-  const sourcePile = pileRef(owner, type, col);
+function checkWin(owner) {
+  const p = state.players[owner];
+  if (p.reserve.length === 0 && p.hand.length === 0 && p.waste.length === 0 && p.drawn.length === 0) {
+    state.winner = owner;
+  }
+}
+
+function attemptMove(source, dest) {
+  if (state.winner) return false;
+  if (!isPlayable(source.owner, source.type)) return false;
+  const sourcePile = pileRef(source.owner, source.type, source.col);
   const card = topOf(sourcePile);
-  if (!card) { state.selected = null; render(); return; }
+  if (!card || !card.faceUp) return false;
 
   let success = false;
 
-  if (destKind === 'foundation') {
-    if (canPlayOnFoundation(card, destOwner)) {
+  if (dest.zone === 'foundation') {
+    if (canPlayOnFoundation(card, dest.found)) {
       sourcePile.pop();
-      card.faceUp = true;
-      state.foundations[destOwner].push(card);
+      state.foundations[dest.found].push(card);
       success = true;
     }
-  } else if (destKind === 'tcol') {
-    if (canPlayOnTableau(card, destOwner, destCol)) {
+  } else if (dest.zone === 'tcol') {
+    if (canPlayOnTableau(card, dest.owner, dest.col)) {
       sourcePile.pop();
-      card.faceUp = true;
-      state.players[destOwner].tableau[destCol].push(card);
+      state.players[dest.owner].tableau[dest.col].push(card);
       success = true;
     }
-  } else if (destKind === 'reserve') {
-    // can only load the opponent's reserve, never your own
-    if (destOwner !== state.current && canLoadPile(card, state.players[destOwner].reserve)) {
+  } else if (dest.zone === 'reserve') {
+    if (dest.owner !== state.current && canLoadPile(card, state.players[dest.owner].reserve)) {
       sourcePile.pop();
-      card.faceUp = true;
-      state.players[destOwner].reserve.push(card);
+      state.players[dest.owner].reserve.push(card);
       success = true;
     }
-  } else if (destKind === 'waste') {
-    // can only load the opponent's waste, never your own
-    if (destOwner !== state.current && canLoadPile(card, state.players[destOwner].waste)) {
+  } else if (dest.zone === 'waste') {
+    if (dest.owner === state.current) {
+      // discarding your own drawn card onto your own waste ends your turn
+      if (source.type === 'drawn' && source.owner === state.current) {
+        sourcePile.pop();
+        state.players[dest.owner].waste.push(card);
+        endTurn();
+        return true;
+      }
+      return false;
+    }
+    if (canLoadPile(card, state.players[dest.owner].waste)) {
       sourcePile.pop();
-      card.faceUp = true;
-      state.players[destOwner].waste.push(card);
+      state.players[dest.owner].waste.push(card);
       success = true;
     }
   }
 
   if (success) {
     flipNewTopIfNeeded(sourcePile);
-    state.selected = null;
-    checkWin(owner);
-  } else {
-    state.selected = null;
+    checkWin(source.owner);
   }
-  render();
-}
-
-function checkWin(owner) {
-  const p = state.players[owner];
-  if (p.reserve.length === 0 && p.hand.length === 0 && p.waste.length === 0 && p.drawn.length === 0) {
-    state.winner = owner;
-  }
+  return success;
 }
 
 // Draw the next hand card face-up; it stays available to play until the
@@ -474,7 +472,6 @@ function drawCard(owner) {
 
   if (p.hand.length === 0) {
     if (p.waste.length === 0) return; // nothing left to draw
-    // recycle waste back into hand, face down, without ending the turn
     p.hand = p.waste.reverse();
     p.hand.forEach(c => (c.faceUp = false));
     p.waste = [];
@@ -484,22 +481,10 @@ function drawCard(owner) {
   const card = p.hand.pop();
   card.faceUp = true;
   p.drawn.push(card);
-  state.selected = null;
   render();
 }
 
-// Discarding the drawn card onto your own waste ends your turn.
-function discardDrawn(owner) {
-  if (owner !== state.current || state.winner) return;
-  const p = state.players[owner];
-  if (p.drawn.length === 0) return;
-  const card = p.drawn.pop();
-  p.waste.push(card);
-  endTurn();
-}
-
 function endTurn() {
-  state.selected = null;
   state.current = other(state.current);
   render();
 }
@@ -514,18 +499,92 @@ function cardEl(card, extraClass) {
   return div;
 }
 
-function isSelected(owner, type, col) {
-  return state.selected && state.selected.owner === owner && state.selected.type === type && state.selected.col === col;
+// ---------- Drag and drop (pointer events: works for mouse + touch) ----------
+
+let drag = null; // { source, ghost, offsetX, offsetY, originEl }
+
+function attachDragHandlers(el, source) {
+  el.addEventListener('pointerdown', (e) => {
+    if (state.winner || !isPlayable(source.owner, source.type)) return;
+    const pile = pileRef(source.owner, source.type, source.col);
+    const card = topOf(pile);
+    if (!card || !card.faceUp) return;
+    e.preventDefault();
+
+    const rect = el.getBoundingClientRect();
+    const ghost = el.cloneNode(true);
+    ghost.classList.add('drag-ghost');
+    ghost.style.width = rect.width + 'px';
+    ghost.style.height = rect.height + 'px';
+    ghost.style.left = rect.left + 'px';
+    ghost.style.top = rect.top + 'px';
+    document.body.appendChild(ghost);
+    el.classList.add('drag-source-hidden');
+
+    drag = {
+      source,
+      ghost,
+      originEl: el,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  });
 }
 
-function renderSimplePile(elId, owner, type, onClick) {
-  const el = document.getElementById(elId);
+function onPointerMove(e) {
+  if (!drag) return;
+  drag.ghost.style.left = (e.clientX - drag.offsetX) + 'px';
+  drag.ghost.style.top = (e.clientY - drag.offsetY) + 'px';
+  document.querySelectorAll('.drop-target-hint').forEach(n => n.classList.remove('drop-target-hint'));
+  const zoneEl = elementUnderGhost(e.clientX, e.clientY);
+  if (zoneEl) zoneEl.classList.add('drop-target-hint');
+}
+
+function elementUnderGhost(x, y) {
+  drag.ghost.style.display = 'none';
+  const el = document.elementFromPoint(x, y);
+  drag.ghost.style.display = '';
+  return el ? el.closest('[data-zone]') : null;
+}
+
+function onPointerUp(e) {
+  if (!drag) return;
+  const { source, ghost, originEl } = drag;
+  const zoneEl = elementUnderGhost(e.clientX, e.clientY);
+
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
+  document.querySelectorAll('.drop-target-hint').forEach(n => n.classList.remove('drop-target-hint'));
+  ghost.remove();
+  originEl.classList.remove('drag-source-hidden');
+  drag = null;
+
+  if (zoneEl) {
+    const dest = {
+      zone: zoneEl.dataset.zone,
+      owner: zoneEl.dataset.owner ? Number(zoneEl.dataset.owner) : undefined,
+      col: zoneEl.dataset.col !== undefined ? Number(zoneEl.dataset.col) : undefined,
+      found: zoneEl.dataset.found !== undefined ? Number(zoneEl.dataset.found) : undefined,
+    };
+    attemptMove(source, dest);
+  }
+  render();
+}
+
+// ---------- Rendering ----------
+
+function renderPile(el, owner, type, col) {
   el.innerHTML = '';
-  const pile = pileRef(owner, type, null);
+  const pile = pileRef(owner, type, col);
   const card = topOf(pile);
   if (card) {
-    const div = cardEl(card, isSelected(owner, type, null) ? 'selected' : '');
+    const draggable = card.faceUp && isPlayable(owner, type);
+    const div = cardEl(card, draggable ? 'draggable' : '');
     el.appendChild(div);
+    if (draggable) attachDragHandlers(div, { owner, type, col });
     if (pile.length > 1) {
       const count = document.createElement('div');
       count.className = 'pile-count';
@@ -533,40 +592,34 @@ function renderSimplePile(elId, owner, type, onClick) {
       el.appendChild(count);
     }
   }
-  el.onclick = onClick;
+}
+
+// Houses show the full cascading sequence (only the outermost card is draggable).
+function renderHouse(el, owner, col) {
+  el.innerHTML = '';
+  const pile = state.players[owner].tableau[col];
+  pile.forEach((card, idx) => {
+    const isTop = idx === pile.length - 1;
+    const draggable = isTop && card.faceUp && isPlayable(owner, 'tcol');
+    const div = cardEl(card, draggable ? 'draggable' : '');
+    div.style.top = `${idx * 18}px`;
+    div.style.zIndex = idx;
+    el.appendChild(div);
+    if (draggable) attachDragHandlers(div, { owner, type: 'tcol', col });
+  });
+  el.style.minHeight = `${100 + Math.max(0, pile.length - 1) * 18}px`;
 }
 
 function render() {
   for (const owner of [1, 2]) {
-    // Reserve: selectable only by its own player; otherwise it's a load target for the opponent.
-    renderSimplePile(`p${owner}-stock`, owner, 'reserve', () => {
-      const isSelectedPile = state.selected && state.selected.owner === owner && state.selected.type === 'reserve';
-      if (state.selected && !isSelectedPile) {
-        attemptMoveTo('reserve', owner, null);
-      } else {
-        selectCard(owner, 'reserve', null);
-      }
-    });
+    renderPile(document.getElementById(`p${owner}-reserve`), owner, 'reserve', null);
+    renderPile(document.getElementById(`p${owner}-drawn`), owner, 'drawn', null);
+    renderPile(document.getElementById(`p${owner}-waste`), owner, 'waste', null);
 
-    // Drawn card (revealed from hand): selectable only by its own player while pending.
-    // It's never a valid move destination, so ignore clicks on the opponent's drawn slot.
-    renderSimplePile(`p${owner}-drawn`, owner, 'drawn', () => {
-      if (owner === state.current) selectCard(owner, 'drawn', null);
-    });
+    for (let col = 0; col < 4; col++) {
+      renderHouse(document.getElementById(`p${owner}-house-${col}`), owner, col);
+    }
 
-    // Waste: clicking your own waste with a pending drawn card discards it (ends turn).
-    // Clicking the opponent's waste with a card selected attempts to load it.
-    renderSimplePile(`p${owner}-waste`, owner, 'waste', () => {
-      if (owner === state.current) {
-        if (!state.selected && state.players[owner].drawn.length > 0) {
-          discardDrawn(owner);
-        }
-      } else if (state.selected) {
-        attemptMoveTo('waste', owner, null);
-      }
-    });
-
-    // Hand pile (always face down, shows count, click = draw next card)
     const handEl = document.getElementById(`p${owner}-hand`);
     handEl.innerHTML = '';
     if (state.players[owner].hand.length > 0) {
@@ -583,43 +636,19 @@ function render() {
     drawBtn.onclick = () => drawCard(owner);
   }
 
-  // Tableau houses: any house's top card is available to whoever's turn it is.
-  document.querySelectorAll('.tcol').forEach(el => {
-    const owner = Number(el.dataset.owner);
-    const col = Number(el.dataset.col);
+  for (let i = 0; i < FOUNDATION_COUNT; i++) {
+    const el = document.getElementById(`found-${i}`);
     el.innerHTML = '';
-    const pile = state.players[owner].tableau[col];
-    pile.forEach((card, idx) => {
-      const div = cardEl(card, isSelected(owner, 'tcol', col) && idx === pile.length - 1 ? 'selected' : '');
-      div.style.top = `${idx * 18}px`;
-      div.style.zIndex = idx;
-      el.appendChild(div);
-    });
-    el.style.minHeight = `${100 + Math.max(0, pile.length - 1) * 18}px`;
-    el.onclick = () => {
-      const top = topOf(pile);
-      const isSelectedPile = state.selected && state.selected.owner === owner && state.selected.type === 'tcol' && state.selected.col === col;
-      if (state.selected && !isSelectedPile) {
-        attemptMoveTo('tcol', owner, col);
-      } else if (top && top.faceUp) {
-        selectCard(owner, 'tcol', col);
-      }
-    };
-  });
-
-  // Foundations
-  document.querySelectorAll('.foundation').forEach(el => {
-    const suit = el.dataset.suit;
-    el.querySelectorAll('.card').forEach(c => c.remove());
-    const card = topOf(state.foundations[suit]);
+    const card = topOf(state.foundations[i]);
     if (card) el.appendChild(cardEl(card));
-    el.onclick = () => {
-      if (state.selected) attemptMoveTo('foundation', suit, null);
-    };
-  });
+  }
 
-  document.getElementById('area-1').classList.toggle('active-turn', state.current === 1 && !state.winner);
-  document.getElementById('area-2').classList.toggle('active-turn', state.current === 2 && !state.winner);
+  document.querySelectorAll('.cell').forEach(cell => {
+    const pile = cell.querySelector('[data-owner]');
+    if (pile && pile.dataset.zone !== 'tcol') {
+      cell.classList.toggle('active-turn', Number(pile.dataset.owner) === state.current && !state.winner);
+    }
+  });
 
   const banner = document.getElementById('banner');
   if (state.winner) {

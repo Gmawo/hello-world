@@ -4,6 +4,7 @@ const SUITS = ['S', 'H', 'C', 'D'];
 const SUIT_SYMBOL = { S: '♠', H: '♥', C: '♣', D: '♦' };
 const RED_SUITS = new Set(['H', 'D']);
 const RANK_LABEL = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+const FOUNDATION_COUNT = 8; // 2 decks x 4 suits => up to 2 concurrent runs per suit
 
 function rankLabel(r) { return RANK_LABEL[r] || String(r); }
 function isRed(suit) { return RED_SUITS.has(suit); }
@@ -46,9 +47,8 @@ function makePlayerState(owner) {
 function newGame() {
   return {
     players: { 1: makePlayerState(1), 2: makePlayerState(2) },
-    foundations: { S: [], H: [], C: [], D: [] },
+    foundations: Array.from({ length: FOUNDATION_COUNT }, () => []),
     current: 1,
-    selected: null, // { owner, type: 'reserve'|'drawn'|'tcol', col }
     winner: null,
   };
 }
@@ -66,11 +66,11 @@ function pileRef(owner, type, col) {
   return null;
 }
 
-function canPlayOnFoundation(card, suit) {
-  const f = state.foundations[suit];
-  if (card.suit !== suit) return false;
+function canPlayOnFoundation(card, index) {
+  const f = state.foundations[index];
   if (f.length === 0) return card.rank === 1;
-  return topOf(f).rank === card.rank - 1;
+  const top = topOf(f);
+  return top.suit === card.suit && top.rank === card.rank - 1;
 }
 
 function canPlayOnTableau(card, destOwner, destCol) {
@@ -87,26 +87,12 @@ function canLoadPile(card, pile) {
   return card.suit === top.suit && Math.abs(card.rank - top.rank) === 1;
 }
 
-function isPlayable(owner, type, col) {
-  // Whose available cards: your own reserve top, your own drawn card, or
-  // the outermost card of ANY house (houses are shared by both players).
+// Whose available cards: your own reserve top, your own drawn card, or
+// the outermost card of ANY house (houses are shared by both players).
+function isPlayable(owner, type) {
   if (type === 'reserve' || type === 'drawn') return owner === state.current;
   if (type === 'tcol') return true;
   return false;
-}
-
-function selectCard(owner, type, col) {
-  if (state.winner || !isPlayable(owner, type, col)) { state.selected = null; render(); return; }
-  const pile = pileRef(owner, type, col);
-  const card = topOf(pile);
-  if (!card || !card.faceUp) { state.selected = null; render(); return; }
-
-  if (state.selected && state.selected.owner === owner && state.selected.type === type && state.selected.col === col) {
-    state.selected = null; // toggle off
-  } else {
-    state.selected = { owner, type, col };
-  }
-  render();
 }
 
 function flipNewTopIfNeeded(pile) {
@@ -114,62 +100,63 @@ function flipNewTopIfNeeded(pile) {
   if (top) top.faceUp = true;
 }
 
-function attemptMoveTo(destKind, destOwner, destCol) {
-  if (!state.selected || state.winner) return;
-  const { owner, type, col } = state.selected;
-  const sourcePile = pileRef(owner, type, col);
+function checkWin(owner) {
+  const p = state.players[owner];
+  if (p.reserve.length === 0 && p.hand.length === 0 && p.waste.length === 0 && p.drawn.length === 0) {
+    state.winner = owner;
+  }
+}
+
+function attemptMove(source, dest) {
+  if (state.winner) return false;
+  if (!isPlayable(source.owner, source.type)) return false;
+  const sourcePile = pileRef(source.owner, source.type, source.col);
   const card = topOf(sourcePile);
-  if (!card) { state.selected = null; render(); return; }
+  if (!card || !card.faceUp) return false;
 
   let success = false;
 
-  if (destKind === 'foundation') {
-    if (canPlayOnFoundation(card, destOwner)) {
+  if (dest.zone === 'foundation') {
+    if (canPlayOnFoundation(card, dest.found)) {
       sourcePile.pop();
-      card.faceUp = true;
-      state.foundations[destOwner].push(card);
+      state.foundations[dest.found].push(card);
       success = true;
     }
-  } else if (destKind === 'tcol') {
-    if (canPlayOnTableau(card, destOwner, destCol)) {
+  } else if (dest.zone === 'tcol') {
+    if (canPlayOnTableau(card, dest.owner, dest.col)) {
       sourcePile.pop();
-      card.faceUp = true;
-      state.players[destOwner].tableau[destCol].push(card);
+      state.players[dest.owner].tableau[dest.col].push(card);
       success = true;
     }
-  } else if (destKind === 'reserve') {
-    // can only load the opponent's reserve, never your own
-    if (destOwner !== state.current && canLoadPile(card, state.players[destOwner].reserve)) {
+  } else if (dest.zone === 'reserve') {
+    if (dest.owner !== state.current && canLoadPile(card, state.players[dest.owner].reserve)) {
       sourcePile.pop();
-      card.faceUp = true;
-      state.players[destOwner].reserve.push(card);
+      state.players[dest.owner].reserve.push(card);
       success = true;
     }
-  } else if (destKind === 'waste') {
-    // can only load the opponent's waste, never your own
-    if (destOwner !== state.current && canLoadPile(card, state.players[destOwner].waste)) {
+  } else if (dest.zone === 'waste') {
+    if (dest.owner === state.current) {
+      // discarding your own drawn card onto your own waste ends your turn
+      if (source.type === 'drawn' && source.owner === state.current) {
+        sourcePile.pop();
+        state.players[dest.owner].waste.push(card);
+        endTurn();
+        return true;
+      }
+      return false;
+    }
+    if (canLoadPile(card, state.players[dest.owner].waste)) {
       sourcePile.pop();
-      card.faceUp = true;
-      state.players[destOwner].waste.push(card);
+      state.players[dest.owner].waste.push(card);
       success = true;
     }
   }
 
   if (success) {
     flipNewTopIfNeeded(sourcePile);
-    state.selected = null;
-    checkWin(owner);
-  } else {
-    state.selected = null;
+    checkWin(source.owner);
   }
-  render();
-}
-
-function checkWin(owner) {
-  const p = state.players[owner];
-  if (p.reserve.length === 0 && p.hand.length === 0 && p.waste.length === 0 && p.drawn.length === 0) {
-    state.winner = owner;
-  }
+  return success;
 }
 
 // Draw the next hand card face-up; it stays available to play until the
@@ -181,7 +168,6 @@ function drawCard(owner) {
 
   if (p.hand.length === 0) {
     if (p.waste.length === 0) return; // nothing left to draw
-    // recycle waste back into hand, face down, without ending the turn
     p.hand = p.waste.reverse();
     p.hand.forEach(c => (c.faceUp = false));
     p.waste = [];
@@ -191,22 +177,10 @@ function drawCard(owner) {
   const card = p.hand.pop();
   card.faceUp = true;
   p.drawn.push(card);
-  state.selected = null;
   render();
 }
 
-// Discarding the drawn card onto your own waste ends your turn.
-function discardDrawn(owner) {
-  if (owner !== state.current || state.winner) return;
-  const p = state.players[owner];
-  if (p.drawn.length === 0) return;
-  const card = p.drawn.pop();
-  p.waste.push(card);
-  endTurn();
-}
-
 function endTurn() {
-  state.selected = null;
   state.current = other(state.current);
   render();
 }
@@ -221,18 +195,92 @@ function cardEl(card, extraClass) {
   return div;
 }
 
-function isSelected(owner, type, col) {
-  return state.selected && state.selected.owner === owner && state.selected.type === type && state.selected.col === col;
+// ---------- Drag and drop (pointer events: works for mouse + touch) ----------
+
+let drag = null; // { source, ghost, offsetX, offsetY, originEl }
+
+function attachDragHandlers(el, source) {
+  el.addEventListener('pointerdown', (e) => {
+    if (state.winner || !isPlayable(source.owner, source.type)) return;
+    const pile = pileRef(source.owner, source.type, source.col);
+    const card = topOf(pile);
+    if (!card || !card.faceUp) return;
+    e.preventDefault();
+
+    const rect = el.getBoundingClientRect();
+    const ghost = el.cloneNode(true);
+    ghost.classList.add('drag-ghost');
+    ghost.style.width = rect.width + 'px';
+    ghost.style.height = rect.height + 'px';
+    ghost.style.left = rect.left + 'px';
+    ghost.style.top = rect.top + 'px';
+    document.body.appendChild(ghost);
+    el.classList.add('drag-source-hidden');
+
+    drag = {
+      source,
+      ghost,
+      originEl: el,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  });
 }
 
-function renderSimplePile(elId, owner, type, onClick) {
-  const el = document.getElementById(elId);
+function onPointerMove(e) {
+  if (!drag) return;
+  drag.ghost.style.left = (e.clientX - drag.offsetX) + 'px';
+  drag.ghost.style.top = (e.clientY - drag.offsetY) + 'px';
+  document.querySelectorAll('.drop-target-hint').forEach(n => n.classList.remove('drop-target-hint'));
+  const zoneEl = elementUnderGhost(e.clientX, e.clientY);
+  if (zoneEl) zoneEl.classList.add('drop-target-hint');
+}
+
+function elementUnderGhost(x, y) {
+  drag.ghost.style.display = 'none';
+  const el = document.elementFromPoint(x, y);
+  drag.ghost.style.display = '';
+  return el ? el.closest('[data-zone]') : null;
+}
+
+function onPointerUp(e) {
+  if (!drag) return;
+  const { source, ghost, originEl } = drag;
+  const zoneEl = elementUnderGhost(e.clientX, e.clientY);
+
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
+  document.querySelectorAll('.drop-target-hint').forEach(n => n.classList.remove('drop-target-hint'));
+  ghost.remove();
+  originEl.classList.remove('drag-source-hidden');
+  drag = null;
+
+  if (zoneEl) {
+    const dest = {
+      zone: zoneEl.dataset.zone,
+      owner: zoneEl.dataset.owner ? Number(zoneEl.dataset.owner) : undefined,
+      col: zoneEl.dataset.col !== undefined ? Number(zoneEl.dataset.col) : undefined,
+      found: zoneEl.dataset.found !== undefined ? Number(zoneEl.dataset.found) : undefined,
+    };
+    attemptMove(source, dest);
+  }
+  render();
+}
+
+// ---------- Rendering ----------
+
+function renderPile(el, owner, type, col) {
   el.innerHTML = '';
-  const pile = pileRef(owner, type, null);
+  const pile = pileRef(owner, type, col);
   const card = topOf(pile);
   if (card) {
-    const div = cardEl(card, isSelected(owner, type, null) ? 'selected' : '');
+    const draggable = card.faceUp && isPlayable(owner, type);
+    const div = cardEl(card, draggable ? 'draggable' : '');
     el.appendChild(div);
+    if (draggable) attachDragHandlers(div, { owner, type, col });
     if (pile.length > 1) {
       const count = document.createElement('div');
       count.className = 'pile-count';
@@ -240,40 +288,34 @@ function renderSimplePile(elId, owner, type, onClick) {
       el.appendChild(count);
     }
   }
-  el.onclick = onClick;
+}
+
+// Houses show the full cascading sequence (only the outermost card is draggable).
+function renderHouse(el, owner, col) {
+  el.innerHTML = '';
+  const pile = state.players[owner].tableau[col];
+  pile.forEach((card, idx) => {
+    const isTop = idx === pile.length - 1;
+    const draggable = isTop && card.faceUp && isPlayable(owner, 'tcol');
+    const div = cardEl(card, draggable ? 'draggable' : '');
+    div.style.top = `${idx * 18}px`;
+    div.style.zIndex = idx;
+    el.appendChild(div);
+    if (draggable) attachDragHandlers(div, { owner, type: 'tcol', col });
+  });
+  el.style.minHeight = `${100 + Math.max(0, pile.length - 1) * 18}px`;
 }
 
 function render() {
   for (const owner of [1, 2]) {
-    // Reserve: selectable only by its own player; otherwise it's a load target for the opponent.
-    renderSimplePile(`p${owner}-stock`, owner, 'reserve', () => {
-      const isSelectedPile = state.selected && state.selected.owner === owner && state.selected.type === 'reserve';
-      if (state.selected && !isSelectedPile) {
-        attemptMoveTo('reserve', owner, null);
-      } else {
-        selectCard(owner, 'reserve', null);
-      }
-    });
+    renderPile(document.getElementById(`p${owner}-reserve`), owner, 'reserve', null);
+    renderPile(document.getElementById(`p${owner}-drawn`), owner, 'drawn', null);
+    renderPile(document.getElementById(`p${owner}-waste`), owner, 'waste', null);
 
-    // Drawn card (revealed from hand): selectable only by its own player while pending.
-    // It's never a valid move destination, so ignore clicks on the opponent's drawn slot.
-    renderSimplePile(`p${owner}-drawn`, owner, 'drawn', () => {
-      if (owner === state.current) selectCard(owner, 'drawn', null);
-    });
+    for (let col = 0; col < 4; col++) {
+      renderHouse(document.getElementById(`p${owner}-house-${col}`), owner, col);
+    }
 
-    // Waste: clicking your own waste with a pending drawn card discards it (ends turn).
-    // Clicking the opponent's waste with a card selected attempts to load it.
-    renderSimplePile(`p${owner}-waste`, owner, 'waste', () => {
-      if (owner === state.current) {
-        if (!state.selected && state.players[owner].drawn.length > 0) {
-          discardDrawn(owner);
-        }
-      } else if (state.selected) {
-        attemptMoveTo('waste', owner, null);
-      }
-    });
-
-    // Hand pile (always face down, shows count, click = draw next card)
     const handEl = document.getElementById(`p${owner}-hand`);
     handEl.innerHTML = '';
     if (state.players[owner].hand.length > 0) {
@@ -290,43 +332,19 @@ function render() {
     drawBtn.onclick = () => drawCard(owner);
   }
 
-  // Tableau houses: any house's top card is available to whoever's turn it is.
-  document.querySelectorAll('.tcol').forEach(el => {
-    const owner = Number(el.dataset.owner);
-    const col = Number(el.dataset.col);
+  for (let i = 0; i < FOUNDATION_COUNT; i++) {
+    const el = document.getElementById(`found-${i}`);
     el.innerHTML = '';
-    const pile = state.players[owner].tableau[col];
-    pile.forEach((card, idx) => {
-      const div = cardEl(card, isSelected(owner, 'tcol', col) && idx === pile.length - 1 ? 'selected' : '');
-      div.style.top = `${idx * 18}px`;
-      div.style.zIndex = idx;
-      el.appendChild(div);
-    });
-    el.style.minHeight = `${100 + Math.max(0, pile.length - 1) * 18}px`;
-    el.onclick = () => {
-      const top = topOf(pile);
-      const isSelectedPile = state.selected && state.selected.owner === owner && state.selected.type === 'tcol' && state.selected.col === col;
-      if (state.selected && !isSelectedPile) {
-        attemptMoveTo('tcol', owner, col);
-      } else if (top && top.faceUp) {
-        selectCard(owner, 'tcol', col);
-      }
-    };
-  });
-
-  // Foundations
-  document.querySelectorAll('.foundation').forEach(el => {
-    const suit = el.dataset.suit;
-    el.querySelectorAll('.card').forEach(c => c.remove());
-    const card = topOf(state.foundations[suit]);
+    const card = topOf(state.foundations[i]);
     if (card) el.appendChild(cardEl(card));
-    el.onclick = () => {
-      if (state.selected) attemptMoveTo('foundation', suit, null);
-    };
-  });
+  }
 
-  document.getElementById('area-1').classList.toggle('active-turn', state.current === 1 && !state.winner);
-  document.getElementById('area-2').classList.toggle('active-turn', state.current === 2 && !state.winner);
+  document.querySelectorAll('.cell').forEach(cell => {
+    const pile = cell.querySelector('[data-owner]');
+    if (pile && pile.dataset.zone !== 'tcol') {
+      cell.classList.toggle('active-turn', Number(pile.dataset.owner) === state.current && !state.winner);
+    }
+  });
 
   const banner = document.getElementById('banner');
   if (state.winner) {
