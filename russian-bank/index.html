@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Russian Bank (Crapette)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Russian Bank <span class="subtitle">(Crapette)</span></h1>
+    <button id="rulesBtn">Rules</button>
+    <button id="newGameBtn">New Game</button>
+  </header>
+
+  <div id="banner"></div>
+
+  <div class="player-label top">Player 2</div>
+
+  <main id="board">
+    <!-- Row 1: Player 2's reserve / waste / hand, plus drawn-card slot -->
+    <div class="pile-group cell" style="grid-column:1; grid-row:1;">
+      <div class="pile-caption">Drawn</div>
+      <div class="pile drawn" id="p2-drawn" data-zone="drawn" data-owner="2"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:2; grid-row:1;">
+      <div class="pile-caption">Reserve</div>
+      <div class="pile reserve" id="p2-reserve" data-zone="reserve" data-owner="2"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:3/5; grid-row:1;">
+      <div class="pile-caption">Waste</div>
+      <div class="pile waste" id="p2-waste" data-zone="waste" data-owner="2"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:1;">
+      <div class="pile-caption">Hand</div>
+      <div class="pile hand" id="p2-hand" data-zone="hand" data-owner="2"></div>
+    </div>
+
+    <!-- Rows 2-5: houses flanking the 8 shared foundations -->
+    <div class="pile-group cell" style="grid-column:2; grid-row:2;"><div class="pile tcol" id="p2-house-0" data-zone="tcol" data-owner="2" data-col="0"></div></div>
+    <div class="pile-group cell" style="grid-column:2; grid-row:3;"><div class="pile tcol" id="p2-house-1" data-zone="tcol" data-owner="2" data-col="1"></div></div>
+    <div class="pile-group cell" style="grid-column:2; grid-row:4;"><div class="pile tcol" id="p2-house-2" data-zone="tcol" data-owner="2" data-col="2"></div></div>
+    <div class="pile-group cell" style="grid-column:2; grid-row:5;"><div class="pile tcol" id="p2-house-3" data-zone="tcol" data-owner="2" data-col="3"></div></div>
+
+    <div class="pile-group cell" style="grid-column:3; grid-row:2;"><div class="pile foundation" id="found-0" data-zone="foundation" data-found="0"></div></div>
+    <div class="pile-group cell" style="grid-column:4; grid-row:2;"><div class="pile foundation" id="found-1" data-zone="foundation" data-found="1"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:3;"><div class="pile foundation" id="found-2" data-zone="foundation" data-found="2"></div></div>
+    <div class="pile-group cell" style="grid-column:4; grid-row:3;"><div class="pile foundation" id="found-3" data-zone="foundation" data-found="3"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:4;"><div class="pile foundation" id="found-4" data-zone="foundation" data-found="4"></div></div>
+    <div class="pile-group cell" style="grid-column:4; grid-row:4;"><div class="pile foundation" id="found-5" data-zone="foundation" data-found="5"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:5;"><div class="pile foundation" id="found-6" data-zone="foundation" data-found="6"></div></div>
+    <div class="pile-group cell" style="grid-column:4; grid-row:5;"><div class="pile foundation" id="found-7" data-zone="foundation" data-found="7"></div></div>
+
+    <div class="pile-group cell" style="grid-column:5; grid-row:2;"><div class="pile tcol" id="p1-house-3" data-zone="tcol" data-owner="1" data-col="3"></div></div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:3;"><div class="pile tcol" id="p1-house-2" data-zone="tcol" data-owner="1" data-col="2"></div></div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:4;"><div class="pile tcol" id="p1-house-1" data-zone="tcol" data-owner="1" data-col="1"></div></div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:5;"><div class="pile tcol" id="p1-house-0" data-zone="tcol" data-owner="1" data-col="0"></div></div>
+
+    <!-- Row 6: Player 1's hand / waste / reserve, plus drawn-card slot -->
+    <div class="pile-group cell" style="grid-column:2; grid-row:6;">
+      <div class="pile-caption">Hand</div>
+      <div class="pile hand" id="p1-hand" data-zone="hand" data-owner="1"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:3/5; grid-row:6;">
+      <div class="pile-caption">Waste</div>
+      <div class="pile waste" id="p1-waste" data-zone="waste" data-owner="1"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:5; grid-row:6;">
+      <div class="pile-caption">Reserve</div>
+      <div class="pile reserve" id="p1-reserve" data-zone="reserve" data-owner="1"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:1; grid-row:6;">
+      <div class="pile-caption">Drawn</div>
+      <div class="pile drawn" id="p1-drawn" data-zone="drawn" data-owner="1"></div>
+    </div>
+  </main>
+
+  <div class="player-label bottom">Player 1</div>
+
+  <div class="controls">
+    <button class="drawBtn" id="p1-draw">Player 1: Draw</button>
+    <button class="drawBtn" id="p2-draw">Player 2: Draw</button>
+  </div>
+
+  <dialog id="rulesDialog">
+    <h2>How to play (Russian Bank / Zank-Patience / Crapette)</h2>
+    <ul>
+      <li>Each player has their own deck split into a <strong>Reserve</strong> (top card face up), a <strong>Hand</strong> (face down), a <strong>Waste</strong> pile, and 4 <strong>Houses</strong> (the columns flanking the foundations). The 8 houses and the 8 shared <strong>Foundation</strong> slots in the middle belong to <em>both</em> players.</li>
+      <li><strong>Goal:</strong> be the first to empty your Reserve, Hand, and Waste piles completely.</li>
+      <li><strong>Available cards</strong> you may play on your turn: the top card of <em>your own</em> Reserve, your currently <em>Drawn</em> card (see below), or the outermost card of <strong>any</strong> house &mdash; yours or your opponent's.</li>
+      <li><strong>Drag</strong> an available card onto:
+        <ul>
+          <li>A <strong>Foundation</strong> slot &mdash; an empty slot only takes an Ace, then builds up by suit (A,2,3...K). There are 8 slots since both decks' duplicate ranks need somewhere to go.</li>
+          <li>A <strong>House</strong> (yours or your opponent's) &mdash; one rank lower and the opposite color of that house's top card, or anything if the house is empty.</li>
+          <li>Your <strong>opponent's Reserve or Waste pile</strong> &mdash; "loading" it with a card of the <em>same suit</em>, one rank higher or lower than its current top card. Keep loading as long as you have a card that fits the new top.</li>
+        </ul>
+      </li>
+      <li>Drop it back where it started (or anywhere invalid) and the move is simply cancelled.</li>
+      <li>Play in <strong>any order you like</strong> &mdash; there's no forced priority here, just make whichever legal move benefits you most.</li>
+      <li>Tap your Hand pile (or its Draw button) to reveal the next Hand card &mdash; it becomes available to play just like your Reserve. If you don't (or can't) play it, drag it onto your own <strong>Waste</strong> pile to discard it, which <strong>ends your turn</strong>. If you do play it elsewhere, you may draw again and keep your turn going.</li>
+      <li>If your Hand runs out, tapping it instead flips your Waste back into a face-down Hand, without ending your turn.</li>
+      <li>You can never move a card from your own Waste pile, and you can never play onto your own Reserve or Waste (only your opponent's, or via the discard-to-end-turn drag above).</li>
+      <li>First player to empty Reserve + Hand + Waste wins!</li>
+    </ul>
+    <button id="closeRules">Close</button>
+  </dialog>
+
+  <script src="game.js"></script>
+</body>
+</html>
