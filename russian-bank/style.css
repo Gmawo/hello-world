@@ -69,7 +69,7 @@ header button + button { margin-left: 8px; }
   display: grid;
   grid-template-columns: 90px 70px 84px 84px 84px 84px 70px 90px;
   grid-template-rows: auto auto auto auto auto auto;
-  gap: 4px 4px;
+  gap: 0 0;
   justify-content: center;
   align-items: start;
   padding: 6px 10px 20px;
@@ -80,6 +80,17 @@ header button + button { margin-left: 8px; }
 #board .cell[style*="grid-row:6"] { margin-top: 16px; }
 
 .cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+.hand-draw-cell { justify-content: center; }
+.hand-draw-stack {
+  position: relative;
+  width: 104px;
+  height: 138px;
+}
+.hand-draw-stack .drawn { position: absolute; left: 0; top: 0; z-index: 2; }
+.hand-draw-stack .hand { position: absolute; left: 20px; top: 20px; z-index: 1; }
+.hand-draw-stack .draw-caption { position: absolute; left: 0; top: -16px; }
+.hand-draw-stack .hand-caption { position: absolute; left: 20px; top: 122px; }
 
 .pile-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .pile-caption { font-size: 0.7rem; opacity: 0.8; white-space: nowrap; }
@@ -256,13 +267,17 @@ dialog button {
 @media (max-width: 480px) {
   #board {
     grid-template-columns: 66px 50px 64px 64px 64px 64px 50px 66px;
-    gap: 3px 3px;
+    gap: 0 0;
   }
   #board .cell[style*="grid-row:1"] { margin-bottom: 10px; }
   #board .cell[style*="grid-row:6"] { margin-top: 10px; }
   .pile { width: 54px; height: 78px; }
   .reserve, .waste, .hand { width: 64px; height: 92px; }
   .drawn { width: 48px; height: 70px; }
+  .hand-draw-stack { width: 80px; height: 108px; }
+  .hand-draw-stack .hand { left: 16px; top: 16px; }
+  .hand-draw-stack .draw-caption { top: -14px; }
+  .hand-draw-stack .hand-caption { left: 16px; top: 96px; }
   .card { width: 50px; height: 74px; font-size: 0.85rem; padding: 2px 4px; }
   .pip { font-size: 0.6rem; }
   .pip-ace { font-size: 1.3rem; }
