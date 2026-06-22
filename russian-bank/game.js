@@ -244,6 +244,7 @@ function endTurn() {
 function cardEl(card, extraClass) {
   const div = document.createElement('div');
   div.className = 'card style-' + cardStyle + ' ' + (card.faceUp ? (isRed(card.suit) ? 'red' : 'black') : 'facedown');
+  if (!card.faceUp && card.owner) div.classList.add(`back-p${card.owner}`);
   if (extraClass) div.className += ' ' + extraClass;
   if (card.faceUp) {
     div.innerHTML = `<div class="top">${rankLabel(card.rank)}${SUIT_SYMBOL[card.suit]}</div><div class="bottom">${rankLabel(card.rank)}${SUIT_SYMBOL[card.suit]}</div>`;
@@ -383,7 +384,7 @@ function render() {
     const handEl = document.getElementById(`p${owner}-hand`);
     handEl.innerHTML = '';
     if (state.players[owner].hand.length > 0) {
-      handEl.appendChild(cardEl({ faceUp: false }));
+      handEl.appendChild(cardEl({ faceUp: false, owner }));
       const count = document.createElement('div');
       count.className = 'pile-count';
       count.textContent = state.players[owner].hand.length;
