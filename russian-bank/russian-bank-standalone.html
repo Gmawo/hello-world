@@ -74,7 +74,7 @@ header button + button { margin-left: 8px; }
 
 #board {
   display: grid;
-  grid-template-columns: 90px 84px 90px 84px 84px 90px 90px;
+  grid-template-columns: 90px 70px 84px 84px 84px 84px 70px 90px;
   grid-template-rows: auto auto auto auto auto auto;
   gap: 14px 18px;
   justify-content: center;
@@ -259,7 +259,7 @@ dialog button {
 
 @media (max-width: 480px) {
   #board {
-    grid-template-columns: 66px 64px 70px 64px 64px 70px 66px;
+    grid-template-columns: 66px 50px 64px 64px 64px 64px 50px 66px;
     gap: 8px 6px;
   }
   .pile { width: 54px; height: 78px; }
@@ -293,10 +293,9 @@ dialog button {
   <div class="player-label top">Player 2</div>
 
   <main id="board">
-    <!-- Row 1: Player 2's tallon sits in the gap between her own houses and the
-         foundations (not aligned with the house column), waste in the middle,
-         hand & drawn to the right -->
-    <div class="pile-group cell" style="grid-column:3; grid-row:1;">
+    <!-- Row 1: Player 2's tallon sits at the outer-left edge of the board,
+         waste centered over the foundations, draw & hand to the outer-right -->
+    <div class="pile-group cell" style="grid-column:1; grid-row:1;">
       <div class="pile-caption">Tallon</div>
       <div class="pile reserve" id="p2-reserve" data-zone="reserve" data-owner="2"></div>
     </div>
@@ -304,20 +303,20 @@ dialog button {
       <div class="pile-caption">Waste</div>
       <div class="pile waste" id="p2-waste" data-zone="waste" data-owner="2"></div>
     </div>
-    <div class="pile-group cell" style="grid-column:6; grid-row:1;">
-      <div class="pile-caption">Hand</div>
-      <div class="pile hand" id="p2-hand" data-zone="hand" data-owner="2"></div>
-    </div>
     <div class="pile-group cell" style="grid-column:7; grid-row:1;">
       <div class="pile-caption">Drawn</div>
       <div class="pile drawn" id="p2-drawn" data-zone="drawn" data-owner="2"></div>
     </div>
+    <div class="pile-group cell" style="grid-column:8; grid-row:1;">
+      <div class="pile-caption">Hand</div>
+      <div class="pile hand" id="p2-hand" data-zone="hand" data-owner="2"></div>
+    </div>
 
     <!-- Rows 2-5: houses flanking the 8 shared foundations -->
-    <div class="pile-group cell" style="grid-column:2; grid-row:2;"><div class="pile tcol" id="p2-house-0" data-zone="tcol" data-owner="2" data-col="0"></div></div>
-    <div class="pile-group cell" style="grid-column:2; grid-row:3;"><div class="pile tcol" id="p2-house-1" data-zone="tcol" data-owner="2" data-col="1"></div></div>
-    <div class="pile-group cell" style="grid-column:2; grid-row:4;"><div class="pile tcol" id="p2-house-2" data-zone="tcol" data-owner="2" data-col="2"></div></div>
-    <div class="pile-group cell" style="grid-column:2; grid-row:5;"><div class="pile tcol" id="p2-house-3" data-zone="tcol" data-owner="2" data-col="3"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:2;"><div class="pile tcol" id="p2-house-0" data-zone="tcol" data-owner="2" data-col="0"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:3;"><div class="pile tcol" id="p2-house-1" data-zone="tcol" data-owner="2" data-col="1"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:4;"><div class="pile tcol" id="p2-house-2" data-zone="tcol" data-owner="2" data-col="2"></div></div>
+    <div class="pile-group cell" style="grid-column:3; grid-row:5;"><div class="pile tcol" id="p2-house-3" data-zone="tcol" data-owner="2" data-col="3"></div></div>
 
     <div class="pile-group cell" style="grid-column:4; grid-row:2;"><div class="pile foundation" id="found-0" data-zone="foundation" data-found="0"></div></div>
     <div class="pile-group cell" style="grid-column:5; grid-row:2;"><div class="pile foundation" id="found-1" data-zone="foundation" data-found="1"></div></div>
@@ -328,26 +327,26 @@ dialog button {
     <div class="pile-group cell" style="grid-column:4; grid-row:5;"><div class="pile foundation" id="found-6" data-zone="foundation" data-found="6"></div></div>
     <div class="pile-group cell" style="grid-column:5; grid-row:5;"><div class="pile foundation" id="found-7" data-zone="foundation" data-found="7"></div></div>
 
-    <div class="pile-group cell" style="grid-column:7; grid-row:2;"><div class="pile tcol" id="p1-house-3" data-zone="tcol" data-owner="1" data-col="3"></div></div>
-    <div class="pile-group cell" style="grid-column:7; grid-row:3;"><div class="pile tcol" id="p1-house-2" data-zone="tcol" data-owner="1" data-col="2"></div></div>
-    <div class="pile-group cell" style="grid-column:7; grid-row:4;"><div class="pile tcol" id="p1-house-1" data-zone="tcol" data-owner="1" data-col="1"></div></div>
-    <div class="pile-group cell" style="grid-column:7; grid-row:5;"><div class="pile tcol" id="p1-house-0" data-zone="tcol" data-owner="1" data-col="0"></div></div>
+    <div class="pile-group cell" style="grid-column:6; grid-row:2;"><div class="pile tcol" id="p1-house-3" data-zone="tcol" data-owner="1" data-col="3"></div></div>
+    <div class="pile-group cell" style="grid-column:6; grid-row:3;"><div class="pile tcol" id="p1-house-2" data-zone="tcol" data-owner="1" data-col="2"></div></div>
+    <div class="pile-group cell" style="grid-column:6; grid-row:4;"><div class="pile tcol" id="p1-house-1" data-zone="tcol" data-owner="1" data-col="1"></div></div>
+    <div class="pile-group cell" style="grid-column:6; grid-row:5;"><div class="pile tcol" id="p1-house-0" data-zone="tcol" data-owner="1" data-col="0"></div></div>
 
-    <!-- Row 6: Player 1's drawn & hand to the left, waste in the middle, tallon
-         sits in the gap between the foundations and her own houses -->
+    <!-- Row 6: Player 1's hand & drawn at the outer-left edge, waste centered
+         over the foundations, tallon at the outer-right edge -->
     <div class="pile-group cell" style="grid-column:1; grid-row:6;">
-      <div class="pile-caption">Drawn</div>
-      <div class="pile drawn" id="p1-drawn" data-zone="drawn" data-owner="1"></div>
-    </div>
-    <div class="pile-group cell" style="grid-column:2; grid-row:6;">
       <div class="pile-caption">Hand</div>
       <div class="pile hand" id="p1-hand" data-zone="hand" data-owner="1"></div>
+    </div>
+    <div class="pile-group cell" style="grid-column:2; grid-row:6;">
+      <div class="pile-caption">Drawn</div>
+      <div class="pile drawn" id="p1-drawn" data-zone="drawn" data-owner="1"></div>
     </div>
     <div class="pile-group cell" style="grid-column:4/6; grid-row:6;">
       <div class="pile-caption">Waste</div>
       <div class="pile waste" id="p1-waste" data-zone="waste" data-owner="1"></div>
     </div>
-    <div class="pile-group cell" style="grid-column:6; grid-row:6;">
+    <div class="pile-group cell" style="grid-column:8; grid-row:6;">
       <div class="pile-caption">Tallon</div>
       <div class="pile reserve" id="p1-reserve" data-zone="reserve" data-owner="1"></div>
     </div>
