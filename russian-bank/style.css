@@ -135,6 +135,10 @@ header button + button { margin-left: 8px; }
   color: transparent;
 }
 
+.card.facedown.back-p2 {
+  background: repeating-linear-gradient(45deg, #8f2a2a, #8f2a2a 6px, #6b1e1e 6px, #6b1e1e 12px);
+}
+
 .card.draggable {
   cursor: grab;
   touch-action: none;
