@@ -76,12 +76,15 @@ header button + button { margin-left: 8px; }
   display: grid;
   grid-template-columns: 90px 70px 84px 84px 84px 84px 70px 90px;
   grid-template-rows: auto auto auto auto auto auto;
-  gap: 14px 18px;
+  gap: 4px 4px;
   justify-content: center;
   align-items: start;
   padding: 6px 10px 20px;
   overflow-x: auto;
 }
+
+#board .cell[style*="grid-row:1"] { margin-bottom: 16px; }
+#board .cell[style*="grid-row:6"] { margin-top: 16px; }
 
 .cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 
@@ -260,8 +263,10 @@ dialog button {
 @media (max-width: 480px) {
   #board {
     grid-template-columns: 66px 50px 64px 64px 64px 64px 50px 66px;
-    gap: 8px 6px;
+    gap: 3px 3px;
   }
+  #board .cell[style*="grid-row:1"] { margin-bottom: 10px; }
+  #board .cell[style*="grid-row:6"] { margin-top: 10px; }
   .pile { width: 54px; height: 78px; }
   .reserve, .waste, .hand { width: 64px; height: 92px; }
   .drawn { width: 48px; height: 70px; }
